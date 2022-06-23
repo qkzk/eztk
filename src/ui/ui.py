@@ -1,3 +1,4 @@
+import math
 from rich.columns import Columns
 from rich.panel import Panel
 from rich.text import Text
@@ -49,7 +50,6 @@ class IssueView(Widget):
 class IssueDetail(Widget):
     def on_mount(self):
         self.issue: Issue
-        pass
 
     def set_issue(self, issue: Issue):
         self.issue = issue
@@ -132,6 +132,8 @@ class RepoView(Widget):
 
 
 class EZTKView(App):
+    WIN_WIDTH = 28
+
     async def on_load(self, _: events.Load) -> None:
         """Bind keys with the app loads (but before entering application mode)"""
         await self.bind("q", "quit", "Quit")
@@ -151,25 +153,34 @@ class EZTKView(App):
     async def set_grid(self, height=29):
         self.grid = await self.view.dock_grid()
 
-        self.grid.add_column("col", fraction=1, max_size=28)
+        self.grid.add_column("col", fraction=1, max_size=self.WIN_WIDTH)
         self.grid.add_row("row", fraction=1, max_size=height)
         self.grid.set_repeat(True, True)
-        self.grid.set_align("stretch", "center")
+        self.grid.set_align("center", "center")
 
         self.grid.place(*self.repo_views.values())
 
     async def on_resize(self, event: events.Resize) -> None:
-        self.log(f"New size : {event.size}")
-        new_width = event.size.width
-        if new_width < 110:
-            new_height = 14
-        elif new_width < 230:
-            new_height = 28
-        else:
-            new_height = 56
+        win_height = self.calc_height(event.size.width, event.size.height)
         for row in self.grid.rows:
-            row.max_size = new_height
+            row.max_size = win_height
         self.refresh(layout=True)
 
     def set_repos(self) -> None:
         self.repos_dict = REPOS_DICT
+        self.nb_repos = len(self.repos_dict)
+
+    def calc_height(self, width: int, height) -> int:
+        """
+        Calculates the height of repo windows.
+        """
+        max_win_per_row = width // self.WIN_WIDTH
+        if max_win_per_row >= self.nb_repos:
+            win_height = height - 1
+        elif max_win_per_row >= math.ceil(self.nb_repos / 2):
+            win_height = (height // 2) - 1
+        elif max_win_per_row >= math.ceil(self.nb_repos / 3):
+            win_height = (height // 3) - 1
+        else:
+            win_height = (height // 4) - 1
+        return win_height
