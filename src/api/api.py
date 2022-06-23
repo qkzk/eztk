@@ -16,7 +16,7 @@ class ApiError(Exception):
 
 def fetch_repo(repo: str) -> Repo:
     url = f"{GITHUB_BASEURL}/{GITHUB_USERNAME}/{repo}/issues"
-    resp = requests.get(url, verify=False, headers=GITHUB_HEADER)
+    resp = requests.get(url, headers=GITHUB_HEADER)
     if resp.status_code == 200:
         return Repo.from_json(repo, resp.json())
     else:

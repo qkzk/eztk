@@ -5,13 +5,13 @@ from .model import Issue
 def test_api():
     cours_nsi = fetch_repo("cours-nsi")
 
-    issue = Issue("titre", "corps", ["a", "b"], -1, "open")
+    issue = Issue("cours-nsi", "titre", "corps", ["a", "b"], -1, "open")
     is_created = push_new_issue("cours-nsi", issue)
     assert is_created, "Couldn't create the issue"
 
     cours_nsi = fetch_repo("cours-nsi")
     issue = cours_nsi[0]
-    assert isinstance(issue, Issue), "__getitem__[0] devrait renvoyer une Issue"
+    assert isinstance(issue, Issue), "__getitem__[0] should send an issue back"
 
     issue.body = "nouveau body"
     issue.labels = ["a", "b", "c"]

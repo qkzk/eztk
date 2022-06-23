@@ -1,10 +1,19 @@
 import json
 
+from ..tokens import GITHUB_USERNAME
+
 
 class Issue:
     def __init__(
-        self, title: str, body: str, labels: list[str], number: int, state: str
+        self,
+        repo: str,
+        title: str,
+        body: str,
+        labels: list[str],
+        number: int,
+        state: str,
     ):
+        self._repo = repo
         self._body = body
         self._title = title
         self._labels = labels
@@ -13,6 +22,10 @@ class Issue:
 
     def __repr__(self) -> str:
         return f"Issue({self.title}, {self.body}, {self.labels}, {self.number})"
+
+    @property
+    def repo(self) -> str:
+        return self._repo
 
     @property
     def title(self) -> str:
@@ -39,6 +52,10 @@ class Issue:
         self._labels = labels
 
     @property
+    def labels_str(self) -> str:
+        return " ".join(self.labels) if self.labels else ""
+
+    @property
     def number(self) -> int:
         return self._number
 
@@ -56,9 +73,14 @@ class Issue:
     def get_labels_str(self) -> str:
         return " ".join(self.labels)
 
+    @property
+    def url(self) -> str:
+        return f"https://github.com/{GITHUB_USERNAME}/{self.repo}/issues/{self.number}"
+
     @classmethod
-    def from_json(cls, json_issue: dict) -> "Issue":
+    def from_json(cls, repo: str, json_issue: dict) -> "Issue":
         return cls(
+            repo,
             json_issue["title"],
             json_issue["body"],
             cls.parse_labels(json_issue["labels"]),
