@@ -210,6 +210,7 @@ class RepoView(Widget):
 
 class EZTKView(App):
     WIN_WIDTH = 28
+    DEFAULT_WIN_HEIGHT = 29
 
     repos: Reactive[dict[str, str]] = Reactive({})
     nb_repos: Reactive[int] = Reactive(0)
@@ -265,7 +266,7 @@ class EZTKView(App):
             repo_view.set_index(index)
             self.repo_views[name] = repo_view
 
-    async def set_grid(self, height=29) -> None:
+    async def set_grid(self, height=DEFAULT_WIN_HEIGHT) -> None:
         self.grid = await self.view.dock_grid()
 
         self.grid.add_column("col", fraction=1, max_size=self.WIN_WIDTH)
