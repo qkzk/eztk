@@ -15,16 +15,19 @@ from ..tokens import REPOS_DICT
 
 
 class IssueView(Widget):
-    style: str
+    is_repo_selected: Reactive[bool] = Reactive(False)
+    text_color: Reactive[str] = Reactive("grey70")
 
     def on_mount(self) -> None:
-        self.style = "grey70"
+        self.text_color = "grey70"
         self.set_interval(1, self.refresh)
+        self.is_repo_selected = False
+        self.selected_color: str
 
     def render(self) -> Text:
         return Text(
             self.issue.title,
-            style=self.style,
+            style=self.text_color,
             overflow="ellipsis",
             no_wrap=True,
         )
@@ -34,12 +37,27 @@ class IssueView(Widget):
         return self
 
     def set_selected(self):
-        self.style = "yellow bold"
+        self.text_color = self.selected_color + " bold italic"
+
+    def set_repo_selected(self):
+        self.is_repo_selected = True
+        self.text_color = "grey70 bold"
+
+    def set_repo_not_selected(self):
+        self.is_repo_selected = False
+        self.text_color = "grey70"
+
+    def set_selected_color(self, color):
+        self.selected_color = color
+        return self
 
 
 class IssueDetail(Widget):
+    is_repo_selected: Reactive[bool] = Reactive(False)
+
     def on_mount(self):
         self.issue: Issue
+        self.border_style: str
 
     def set_issue(self, issue: Issue):
         self.issue = issue
@@ -50,9 +68,19 @@ class IssueDetail(Widget):
             self.issue.body,
             title=self.issue.title,
             subtitle=self.issue.labels_str,
-            style="grey100",
-            border_style="cyan",
+            style="grey100 bold" if self.is_repo_selected else "grey100",
+            border_style=self.border_style,
         )
+
+    def set_repo_selected(self):
+        self.is_repo_selected = True
+
+    def set_repo_not_selected(self):
+        self.is_repo_selected = False
+
+    def set_color(self, color):
+        self.border_style = color
+        return self
 
 
 class RepoView(Widget):
@@ -66,25 +94,50 @@ class RepoView(Widget):
         self.is_selected = False
         self.nb_issues = 0
         self.has_issues = False
+        self.index: int
+        self.border_style: str
+
+    def set_index(self, index):
+        self.index = index
+        self.border_style = self.calc_border_style()
 
     def reload_repos(self):
         self.repo = fetch_repo(self._name)
+
+    def calc_border_style(self):
+        style = f"color({(self.index % 6) + 1})"
+        return style
 
     def render(self) -> Panel:
         content: list[str | IssueView | IssueDetail]
         self.nb_issues = len(self.repo)
         if len(self.repo) > 0:
             self.has_issues = True
-            content = [IssueView().set_issue(issue) for issue in self.repo]
+            content = [
+                IssueView().set_issue(issue).set_selected_color(self.border_style)
+                for issue in self.repo
+            ]
+            content.append(
+                IssueDetail()
+                .set_issue(self.repo[self.selected_index])
+                .set_color(self.border_style)
+            )
+            if self.is_selected:
+                for view in content:
+                    view.set_repo_selected()
             content[self.selected_index].set_selected()
-            content.append(IssueDetail().set_issue(self.repo[self.selected_index]))
         else:
             content = [" "]
             self.has_issues = False
+        border_style = (
+            self.border_style + " bold italic"
+            if self.is_selected
+            else self.border_style
+        )
         return Panel(
             Columns(content),
             title=self._name,
-            border_style="red" if self.is_selected else "blue",
+            border_style=border_style,
         )
 
     def set_name(self, name: str) -> None:
@@ -172,10 +225,11 @@ class EZTKView(App):
         self.set_repos()
 
         self.repo_views: dict[str, RepoView] = {}
-        for name, address in self.repo_dict.items():
+        for index, (name, address) in enumerate(self.repo_dict.items()):
             repo_view = RepoView()
             repo_view.set_name(name)
             repo_view.set_address(address)
+            repo_view.set_index(index)
             self.repo_views[name] = repo_view
         await self.set_grid()
 
@@ -234,12 +288,14 @@ class EZTKView(App):
         view = self.get_selected_view()
         if view.has_issues:
             view.selected_index = (view.selected_index - 1) % view.nb_issues
+        self.refresh()
 
     async def action_down(self, *_) -> None:
         """select next issue in current"""
         view = self.get_selected_view()
         if view.has_issues:
             view.selected_index = (view.selected_index + 1) % view.nb_issues
+        self.refresh()
 
     async def action_left(self, *_) -> None:
         """Give focus to previous repo"""
