@@ -7,8 +7,9 @@ Application TUI pour afficher et contrôler les issues de différents répos git
 - [x] Ajouter une issue
 - [x] Modifier une issue
 - [x] Changer de repo facilement (tab, menu)
-- [ ] Ouvrir une issue dans LVIM + Octo
-- [ ] Ouvrir qqchose du dépôt dans LVIM
+- [x] Ouvrir une issue dans LVIM + Octo
+- [x] Ouvrir qqchose du dépôt dans LVIM
 - [x] Ouvrir une issue dans chrome
 - [x] Ouvrir le dépot dans chrome
+- [x] naviguer au clavier
 - [ ] GREP ?

@@ -11,17 +11,7 @@ from textual.widget import Widget
 from ..api import fetch_repo
 from ..commands import open_in_browser, open_in_ranger, open_in_lvim_octo
 from ..model import Issue
-
-REPOS_DICT = {
-    "cours": "/home/quentin/gdrive/cours/git_cours/cours",
-    "cours-nsi": "/home/quentin/gdrive/cours/cours-nsi",
-    "imt": "/home/quentin/gdrive/cours/IMT",
-    "EcoGestion": "/home/quentin/gdrive/cours/EcoGestion",
-    "qkzk": "/home/quentin/gclem/dev/hugo/qkzk",
-    "qcm_alchemy": "/home/quentin/gclem/dev/python/boulot_utils/qcm_alchemy",
-    "reprographie": "/home/quentin/gclem/dev/python/boulot_utils/reprographie",
-    "TSTMG": "/home/quentin/gdrive/cours/TSTMG",
-}
+from ..tokens import REPOS_DICT
 
 
 class IssueView(Widget):
@@ -66,29 +56,35 @@ class IssueDetail(Widget):
 
 
 class RepoView(Widget):
-    mouse_over: Reactive[bool] = Reactive(False)
+    is_selected: Reactive[bool] = Reactive(False)
 
     def on_mount(self) -> None:
         self.set_interval(1, self.refresh)
         self.set_interval(30, self.reload_repos)
         self.reload_repos()
         self.selected_index = 0
+        self.is_selected = False
+        self.nb_issues = 0
+        self.has_issues = False
 
     def reload_repos(self):
         self.repo = fetch_repo(self._name)
 
     def render(self) -> Panel:
         content: list[str | IssueView | IssueDetail]
+        self.nb_issues = len(self.repo)
         if len(self.repo) > 0:
+            self.has_issues = True
             content = [IssueView().set_issue(issue) for issue in self.repo]
             content[self.selected_index].set_selected()
             content.append(IssueDetail().set_issue(self.repo[self.selected_index]))
         else:
             content = [" "]
+            self.has_issues = False
         return Panel(
             Columns(content),
             title=self._name,
-            border_style="red" if self.mouse_over else "blue",
+            border_style="red" if self.is_selected else "blue",
         )
 
     def set_name(self, name: str) -> None:
@@ -106,29 +102,47 @@ class RepoView(Widget):
         """
         self.selected_index = y - 1
 
+    def open_repo_in_browser(self):
+        open_in_browser(self.repo.url)
+
+    def open_selected_issue_in_browser(self):
+        open_in_browser(self.repo[self.selected_index].url)
+
+    def open_repo_in_ranger(self):
+        open_in_ranger(self._address)
+
+    def open_selected_issue_in_lvim_octo(self):
+        open_in_lvim_octo(self._address, self.repo[self.selected_index].number)
+
     async def on_click(self, event: events.Click) -> None:
         if event.button == 1:
             if event.y == 0:
-                open_in_browser(self.repo.url)
+                self.open_repo_in_browser()
             elif self.is_in_issues_list(event.y):
                 self.select_issue(event.y)
             else:
-                open_in_browser(self.repo[self.selected_index].url)
+                self.open_selected_issue_in_browser()
         if event.button == 3:
             if event.y == 0:
-                open_in_ranger(self._address)
+                self.open_repo_in_ranger()
             elif self.is_in_issues_list(event.y):
                 self.select_issue(event.y)
-                open_in_lvim_octo(self._address, self.repo[self.selected_index].number)
+                self.open_selected_issue_in_lvim_octo()
             else:
-                open_in_lvim_octo(self._address, self.repo[self.selected_index].number)
+                self.open_selected_issue_in_lvim_octo()
         self.refresh()
 
     async def on_enter(self, _: events.Enter) -> None:
-        self.mouse_over = True
+        self.is_selected = True
 
     async def on_leave(self, _: events.Leave) -> None:
-        self.mouse_over = False
+        self.is_selected = False
+
+    def set_selected(self):
+        self.is_selected = True
+
+    def set_not_selected(self):
+        self.is_selected = False
 
 
 class EZTKView(App):
@@ -139,11 +153,26 @@ class EZTKView(App):
         await self.bind("q", "quit", "Quit")
         await self.bind("escape", "quit", "Quit")
 
+        await self.bind("left", "left", "Previous Repo")
+        await self.bind("down", "down", "Previous Issue")
+        await self.bind("up", "up", "Next Issue")
+        await self.bind("right", "right", "Next Repo")
+
+        await self.bind("h", "left", "Previous Repo")
+        await self.bind("j", "down", "Previous Issue")
+        await self.bind("k", "up", "Next Issue")
+        await self.bind("l", "right", "Next Repo")
+
+        await self.bind("f1", "f1", "Open repo in browser")
+        await self.bind("f2", "f2", "Open issue in browser")
+        await self.bind("f3", "f3", "Open repo in ranger")
+        await self.bind("f4", "f4", "Open issue in lvim octo")
+
     async def on_mount(self, _: events.Mount) -> None:
         self.set_repos()
 
-        self.repo_views = {}
-        for name, address in self.repos_dict.items():
+        self.repo_views: dict[str, RepoView] = {}
+        for name, address in self.repo_dict.items():
             repo_view = RepoView()
             repo_view.set_name(name)
             repo_view.set_address(address)
@@ -167,14 +196,15 @@ class EZTKView(App):
         self.refresh(layout=True)
 
     def set_repos(self) -> None:
-        self.repos_dict = REPOS_DICT
-        self.nb_repos = len(self.repos_dict)
+        self.repo_dict = REPOS_DICT
+        self.nb_repos = len(self.repo_dict)
+        self.selected_repo = 0
 
     def calc_height(self, width: int, height) -> int:
         """
         Calculates the height of repo windows.
         """
-        max_win_per_row = width // self.WIN_WIDTH
+        max_win_per_row = width / self.WIN_WIDTH
         if max_win_per_row >= self.nb_repos:
             win_height = height - 1
         elif max_win_per_row >= math.ceil(self.nb_repos / 2):
@@ -184,3 +214,53 @@ class EZTKView(App):
         else:
             win_height = (height // 4) - 1
         return win_height
+
+    def get_selected_view(self) -> RepoView:
+        key = list(self.repo_dict.keys())[self.selected_repo]
+        return self.repo_views[key]
+
+    def set_selected_repo(self, index: int):
+        key = list(self.repo_dict.keys())[index]
+        view = self.repo_views[key]
+        view.set_selected()
+
+    def set_not_selected_repo(self, index: int):
+        key = list(self.repo_dict.keys())[index]
+        view = self.repo_views[key]
+        view.set_not_selected()
+
+    async def action_up(self, *_) -> None:
+        """select previous issue in current"""
+        view = self.get_selected_view()
+        if view.has_issues:
+            view.selected_index = (view.selected_index - 1) % view.nb_issues
+
+    async def action_down(self, *_) -> None:
+        """select next issue in current"""
+        view = self.get_selected_view()
+        if view.has_issues:
+            view.selected_index = (view.selected_index + 1) % view.nb_issues
+
+    async def action_left(self, *_) -> None:
+        """Give focus to previous repo"""
+        self.set_not_selected_repo(self.selected_repo)
+        self.selected_repo = (self.selected_repo - 1) % self.nb_repos
+        self.set_selected_repo(self.selected_repo)
+
+    async def action_right(self, *_) -> None:
+        """Give focus to next repo"""
+        self.set_not_selected_repo(self.selected_repo)
+        self.selected_repo = (self.selected_repo + 1) % self.nb_repos
+        self.set_selected_repo(self.selected_repo)
+
+    async def action_f1(self, *_) -> None:
+        self.get_selected_view().open_repo_in_browser()
+
+    async def action_f2(self, *_) -> None:
+        self.get_selected_view().open_selected_issue_in_browser()
+
+    async def action_f3(self, *_) -> None:
+        self.get_selected_view().open_repo_in_ranger()
+
+    async def action_f4(self, *_) -> None:
+        self.get_selected_view().open_selected_issue_in_lvim_octo()
