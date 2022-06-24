@@ -12,6 +12,7 @@ from ..api import fetch_repo
 from ..commands import open_in_browser, open_in_ranger, open_in_lvim_octo
 from ..model import Issue
 from ..tokens import REPOS_DICT
+from .colors import COLORS
 
 
 class IssueView(Widget):
@@ -105,7 +106,7 @@ class RepoView(Widget):
         self.repo = fetch_repo(self._name)
 
     def calc_border_style(self):
-        style = f"color({(self.index % 6) + 1})"
+        style = f"{COLORS[self.index % len(COLORS)]}"
         return style
 
     def render(self) -> Panel:
