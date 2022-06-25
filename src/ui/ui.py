@@ -1,6 +1,7 @@
 import math
 from rich.box import SQUARE, HEAVY, Box
 from rich.columns import Columns
+from rich.console import JustifyMethod
 from rich.panel import Panel
 from rich.text import Text
 
@@ -8,6 +9,7 @@ from textual import events
 from textual.app import App
 from textual.reactive import Reactive
 from textual.widget import Widget
+from textual.widgets import Placeholder
 
 from ..api import fetch_repo
 from ..commands import open_in_browser, open_in_ranger, open_in_lvim_octo
@@ -17,6 +19,27 @@ from .colors import COLORS
 
 LEFT_BUTTON = 1
 RIGHT_BUTTON = 3
+
+HELP_MESSAGE = """
+EZTK
+
+Display your github issues in the terminal.
+
+← →: change repo 
+ ↓ ↑: change issue
+
+h l: change repo
+ j k: change issue
+
+
+  F1: open repo in browser
+   F2: open issue in browser
+ F3: open repo in ranger
+F4: open issue in Octo
+
+p: toggle Help
+"""
+HELP_SIZE = len(HELP_MESSAGE.splitlines()) + 6
 
 
 class IssueView(Widget):
@@ -98,6 +121,20 @@ class IssueDetail(Widget):
         self.is_repo_selected = False
 
 
+class HelpView(Widget):
+    def render(self):
+        return Panel(
+            Text(HELP_MESSAGE, justify="center"),
+            box=HEAVY,
+            border_style="bold cyan",
+            subtitle="EZTK Help",
+            title="EZTK",
+            style="bold cyan",
+            highlight=True,
+            padding=(1, 1),
+        )
+
+
 class RepoView(Widget):
     is_selected: Reactive[bool] = Reactive(False)
     nb_issues: Reactive[int] = Reactive(0)
@@ -105,15 +142,18 @@ class RepoView(Widget):
     has_issues: Reactive[bool] = Reactive(False)
     index: Reactive[int]
 
-    def on_mount(self) -> None:
+    async def on_mount(self) -> None:
         self.set_interval(1, self.refresh)
-        self.set_interval(30, self.reload_repos)
-        self.reload_repos()
+        self.set_interval(30, self.reload_repo)
+        self.reload_repo()
 
-    def set_index(self, index: int) -> None:
+    def with_attributes(self, name: str, address: str, index: int) -> "RepoView":
+        self._name = name
+        self._address = address
         self.index = index
+        return self
 
-    def reload_repos(self) -> None:
+    def reload_repo(self) -> None:
         response = fetch_repo(self._name)
         if response is not None:
             self.repo = response
@@ -168,12 +208,6 @@ class RepoView(Widget):
             border_style=self.border_style,
             box=self.box,
         )
-
-    def set_name(self, name: str) -> None:
-        self._name = name
-
-    def set_address(self, address: str) -> None:
-        self._address = address
 
     def is_in_issues_list(self, y: int) -> bool:
         return self.has_issues and y <= len(self.repo)
@@ -238,11 +272,32 @@ class EZTKView(App):
     repo_views: Reactive[dict[str, RepoView]] = Reactive({})
     selected_repo: Reactive[int] = Reactive(0)
     selected_view: Reactive[RepoView]
+    help_displayed: Reactive[bool] = Reactive(False)
+
+    binds = (
+        "q",
+        "escape",
+        "p",
+        "left",
+        "right",
+        "up",
+        "down",
+        "h",
+        "j",
+        "k",
+        "l",
+        "f1",
+        "f2",
+        "f3",
+        "f4",
+    )
 
     async def on_load(self, _: events.Load) -> None:
         """Bind keys with the app loads (but before entering application mode)"""
         await self.bind("q", "quit", "Quit")
         await self.bind("escape", "quit", "Quit")
+
+        await self.bind("p", "help", "Help toggle")
 
         await self.bind("left", "left", "Previous Repo")
         await self.bind("down", "down", "Previous Issue")
@@ -259,15 +314,31 @@ class EZTKView(App):
         await self.bind("f3", "f3", "Open repo in ranger")
         await self.bind("f4", "f4", "Open issue in lvim octo")
 
+    async def on_key(self, key: events.Key):
+        if key.key not in self.binds:
+            self.help_displayed = not self.help_displayed
+
     async def on_mount(self, _: events.Mount) -> None:
         self.set_defaults()
+        await self.set_bar()
         await self.set_grid()
+
+        self.bar.layout_offset_y = -HELP_SIZE
+
+    def watch_help_displayed(self, help_displayed: bool) -> None:
+        """Called when `help_displayed` changes."""
+        self.bar.animate("layout_offset_y", 0 if help_displayed else -HELP_SIZE)
+
+    async def set_bar(self) -> None:
+        self.bar = HelpView()
+        await self.view.dock(self.bar, edge="top", size=HELP_SIZE, z=1)
 
     def set_defaults(self) -> None:
         self.set_repos()
         self.set_repo_views()
         self.set_default_selected_repo()
         self.set_nb_repos()
+        self.select_view(self.selected_repo)
 
     def set_repos(self) -> None:
         self.repo_dict = REPOS_DICT
@@ -279,13 +350,10 @@ class EZTKView(App):
         self.selected_repo = 0
 
     def set_repo_views(self) -> None:
-        self.repo_views = {}
-        for index, (name, address) in enumerate(self.repo_dict.items()):
-            repo_view = RepoView()
-            repo_view.set_name(name)
-            repo_view.set_address(address)
-            repo_view.set_index(index)
-            self.repo_views[name] = repo_view
+        self.repo_views = {
+            name: RepoView().with_attributes(name=name, address=address, index=index)
+            for index, (name, address) in enumerate(self.repo_dict.items())
+        }
 
     async def set_grid(self, height=DEFAULT_WIN_HEIGHT) -> None:
         self.grid = await self.view.dock_grid()
@@ -363,3 +431,6 @@ class EZTKView(App):
 
     async def action_f4(self, *_) -> None:
         self.selected_view.open_selected_issue_in_lvim_octo()
+
+    async def action_help(self, *_) -> None:
+        self.help_displayed = not self.help_displayed
