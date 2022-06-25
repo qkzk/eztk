@@ -103,7 +103,11 @@ class RepoView(Widget):
         self.index = index
 
     def reload_repos(self) -> None:
-        self.repo = fetch_repo(self._name)
+        response = fetch_repo(self._name)
+        if response is not None:
+            self.repo = response
+        else:
+            self.repo = []
 
     def generate_content(self) -> list:
         self.nb_issues = len(self.repo)
