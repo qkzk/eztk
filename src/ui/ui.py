@@ -1,4 +1,5 @@
 import math
+from rich.box import SQUARE, HEAVY, Box
 from rich.columns import Columns
 from rich.panel import Panel
 from rich.text import Text
@@ -67,6 +68,15 @@ class IssueDetail(Widget):
         self.border_style = color
         return self
 
+    def with_selection(self, is_parent_selected: bool) -> "IssueDetail":
+        if is_parent_selected:
+            self.is_repo_selected = True
+        return self
+
+    @property
+    def box(self) -> Box:
+        return HEAVY if self.is_repo_selected else SQUARE
+
     def render(self) -> Panel:
         return Panel(
             self.issue.body,
@@ -74,6 +84,7 @@ class IssueDetail(Widget):
             subtitle=self.issue.labels_str,
             style=self.color,
             border_style=self.border_style,
+            box=self.box,
         )
 
     @property
@@ -137,6 +148,7 @@ class RepoView(Widget):
             IssueDetail()
             .with_issue(self.repo[self.selected_index])
             .with_border_style(self.border_style)
+            .with_selection(self.is_selected)
         )
 
     @property
@@ -145,11 +157,16 @@ class RepoView(Widget):
             " bold italic" if self.is_selected else ""
         )
 
+    @property
+    def box(self) -> Box:
+        return HEAVY if self.is_selected else SQUARE
+
     def render(self) -> Panel:
         return Panel(
             Columns(self.generate_content()),
             title=self._name,
             border_style=self.border_style,
+            box=self.box,
         )
 
     def set_name(self, name: str) -> None:
