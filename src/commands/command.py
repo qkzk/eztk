@@ -10,7 +10,7 @@ def exec_command(command: list[str]) -> None:
         command,
         shell=False,
         stdout=subprocess.DEVNULL,
-        stderr=subprocess.STDOUT,
+        stderr=subprocess.DEVNULL,
     )
 
 
@@ -19,5 +19,5 @@ def exec_command_shell(command: str) -> None:
         command,
         shell=True,
         stdout=subprocess.DEVNULL,
-        stderr=subprocess.STDOUT,
+        stderr=subprocess.DEVNULL,
     )
