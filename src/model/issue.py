@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 
 from ..tokens import GITHUB_USERNAME
@@ -96,7 +97,7 @@ class Issue:
         return f"https://github.com/{GITHUB_USERNAME}/{self.repo}/issues/{self.number}"
 
     @classmethod
-    def from_json(cls, repo: str, json_issue: dict) -> "Issue":
+    def from_json(cls, repo: str, json_issue: dict) -> Issue:
         """Returns an instance of `Issue` parsed from a JSON sent by Github."""
         return cls(
             repo,

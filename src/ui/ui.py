@@ -1,3 +1,4 @@
+from __future__ import annotations
 import math
 
 from rich.box import SQUARE, HEAVY, Box
@@ -323,7 +324,7 @@ class RepoView(Widget):
         self.refresh()
 
     @property
-    def boss_view(self) -> "EZTKView":
+    def boss_view(self) -> EZTKView:
         """Returns the parent view. ie. the main view."""
         return self.parent.parent.parent
 

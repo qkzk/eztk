@@ -1,3 +1,4 @@
+from __future__ import annotations
 from .issue import Issue
 from ..tokens import GITHUB_USERNAME
 
@@ -48,7 +49,7 @@ class Repo(list):
         return f"https://github.com/{GITHUB_USERNAME}/{self._name}"
 
     @classmethod
-    def from_json(cls, name, json: list) -> "Repo":
+    def from_json(cls, name, json: list) -> Repo:
         """Creates a `Repo` instance from a JSON sent by github."""
         return cls(
             name,
