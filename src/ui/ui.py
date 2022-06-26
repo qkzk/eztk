@@ -233,6 +233,7 @@ class RepoView(Widget):
             open_in_lvim_octo(self._address, self.repo[self.selected_index].number)
 
     async def on_click(self, event: events.Click) -> None:
+        self.inform_boss_view_of_selection()
         if event.button == LEFT_BUTTON:
             if event.y == 0:
                 self.open_repo_in_browser()
@@ -250,7 +251,15 @@ class RepoView(Widget):
                 self.open_selected_issue_in_lvim_octo()
         self.refresh()
 
+    @property
+    def boss_view(self) -> "EZTKView":
+        return self.parent.parent.parent
+
+    def inform_boss_view_of_selection(self):
+        self.boss_view.set_selected_widget(self.index)
+
     async def on_enter(self, _: events.Enter) -> None:
+        self.inform_boss_view_of_selection()
         self.is_selected = True
 
     async def on_leave(self, _: events.Leave) -> None:
@@ -348,6 +357,11 @@ class EZTKView(App):
 
     def set_default_selected_repo(self) -> None:
         self.selected_repo = 0
+
+    def set_selected_widget(self, index: int) -> None:
+        self.unselect_view(self.selected_repo)
+        self.selected_repo = index
+        self.select_view(self.selected_repo)
 
     def set_repo_views(self) -> None:
         self.repo_views = {
