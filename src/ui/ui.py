@@ -463,6 +463,7 @@ class EZTKView(App):
         """
         self.set_repos()
         self.set_repo_views()
+        self.set_repo_names()
         self.set_default_selected_repo()
         self.set_nb_repos()
         self.select_view(self.selected_repo)
@@ -502,6 +503,12 @@ class EZTKView(App):
             for index, (name, address) in enumerate(self.repo_dict.items())
         }
 
+    def set_repo_names(self) -> None:
+        """
+        Creates a list of repo names.
+        """
+        self.repo_names = list(self.repo_dict)
+
     async def set_grid(self, height=DEFAULT_WIN_HEIGHT) -> None:
         """
         Setup the grid layout.
@@ -540,23 +547,25 @@ class EZTKView(App):
         """
         return height // math.ceil(self.nb_repos * self.WIN_WIDTH / width) - 1
 
+    def get_view_per_index(self, index: int) -> RepoView:
+        """
+        Returns a `RepoView` from its index.
+        """
+        return self.repo_views[self.repo_names[index]]
+
     def select_view(self, index: int) -> None:
         """
         Select a repo view by its index.
-        TODO simplify. Use a static list of keys somewhere.
         """
-        key = list(self.repo_dict.keys())[index]
-        view = self.repo_views[key]
+        view = self.get_view_per_index(index)
         view.set_selected()
         self.selected_view = view
 
     def unselect_view(self, index: int) -> None:
         """
-        Unselect a view by its index.
-        TODO simplify. Use a static list of keys somewhere.
+        Unselect a repo view by its index.
         """
-        key = list(self.repo_dict.keys())[index]
-        view = self.repo_views[key]
+        view = self.get_view_per_index(index)
         view.set_not_selected()
 
     async def action_up(self, *_) -> None:
