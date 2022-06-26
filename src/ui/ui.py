@@ -63,11 +63,22 @@ class IssueView(Widget):
         Bright + italic if the issue issue is selected.
         """
         return Text(
-            self.issue.title,
+            self.title,
             style=self.text_color,
             overflow="ellipsis",
             no_wrap=True,
         )
+
+    @property
+    def title(self) -> str:
+        """
+        Returns a title of the `Issue`.
+        Returns an empty string if the Issue isn't set.
+        """
+        try:
+            return self.issue.title
+        except AttributeError:
+            return ""
 
     def with_issue(self, issue: Issue) -> "IssueView":
         """Set the issue, returns itself"""
@@ -145,6 +156,9 @@ class IssueDetail(Widget):
         """Set itself as not selected."""
         self.is_repo_selected = False
 
+    def set_selected(self):
+        pass
+
 
 class HelpView(Widget):
     """Static view of the help."""
@@ -202,21 +216,23 @@ class RepoView(Widget):
         else:
             self.repo = []
 
-    def generate_content(self) -> list:
+    def count_issues(self):
+        """Set `nb_issues` and `has_issues` attributes."""
+        self.nb_issues = len(self.repo)
+        self.has_issues = self.nb_issues != 0
+
+    def generate_content(self) -> list[IssueView | IssueDetail]:
         """
         Generate the view content.
         Returns a list of `ViewIssue` and `ViewDetail` if there's opened issues, else `[" "]`.
         Set the selected issue as 'selected'.
         Give them the propor color.
         """
-        self.nb_issues = len(self.repo)
-        if self.nb_issues == 0:
-            self.has_issues = False
-            return [" "]
+        self.count_issues()
+        if not self.has_issues:
+            return []
 
-        self.has_issues = True
-        content: list[IssueView | IssueDetail]
-        content = [
+        content: list[IssueView | IssueDetail] = [
             IssueView().with_issue(issue).with_selected_color(self.border_style)
             for issue in self.repo
         ]
