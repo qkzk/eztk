@@ -10,10 +10,14 @@ GITHUB_HEADER = {"Authorization": f"token {GITHUB_TOKEN}"}
 
 
 class ApiError(Exception):
+    """Errors raised when Github doesn't answer with expected status_code"""
+
     pass
 
 
 def catch_connection_errors(func):
+    """Decorator used to prevent URLLib to raise exceptions."""
+
     def inner(*args, **kwargs):
         try:
             return func(*args, **kwargs)
@@ -25,6 +29,12 @@ def catch_connection_errors(func):
 
 @catch_connection_errors
 def fetch_repo(repo: str) -> Repo:
+    """
+    Fetch a repo by its name.
+    Returns a `Repo` instance with issues already provided as `Issue` instance.
+
+    Raise `ApiError` if the status code isn't 200.
+    """
     url = f"{GITHUB_BASEURL}/{GITHUB_USERNAME}/{repo}/issues"
     resp = requests.get(url, headers=GITHUB_HEADER)
     if resp.status_code == 200:
@@ -35,6 +45,10 @@ def fetch_repo(repo: str) -> Repo:
 
 @catch_connection_errors
 def push_new_issue(repo_name: str, issue: Issue) -> bool:
+    """
+    Push a new `Issue` to a `Repo`.
+    Returns `True` iff the issue was created correctly.
+    """
     url = f"{GITHUB_BASEURL}/{GITHUB_USERNAME}/{repo_name}/issues"
     resp = requests.post(url, headers=GITHUB_HEADER, data=issue.to_json())
     return resp.status_code == 201
@@ -42,6 +56,11 @@ def push_new_issue(repo_name: str, issue: Issue) -> bool:
 
 @catch_connection_errors
 def update_issue(repo_name, issue: Issue) -> bool:
+    """
+    Update an already created issue.
+
+    Returns `True` iff the issue was updated correctly.
+    """
     url = f"{GITHUB_BASEURL}/{GITHUB_USERNAME}/{repo_name}/issues/{issue.number}"
     resp = requests.patch(url, headers=GITHUB_HEADER, data=issue.to_json())
     return resp.status_code == 200
