@@ -1,5 +1,7 @@
 # EZTK
 
+Et je pense que c'est terminé pour l'instant...
+
 Application TUI pour afficher et contrôler les issues de différents répos github
 
 - [x] Get les issues
@@ -12,4 +14,3 @@ Application TUI pour afficher et contrôler les issues de différents répos git
 - [x] Ouvrir une issue dans chrome
 - [x] Ouvrir le dépot dans chrome
 - [x] naviguer au clavier
-- [ ] GREP ?
