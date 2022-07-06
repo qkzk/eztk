@@ -37,7 +37,7 @@ class Issue:
     @property
     def title(self) -> str:
         """Issue title"""
-        return self._title
+        return self._title if self._title is not None else ""
 
     @title.setter
     def title(self, title: str):
@@ -47,7 +47,7 @@ class Issue:
     @property
     def body(self) -> str:
         """Body content"""
-        return self._body
+        return self._body if self._body is not None else ""
 
     @body.setter
     def body(self, body: str):

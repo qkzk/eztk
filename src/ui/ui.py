@@ -1,7 +1,7 @@
 from __future__ import annotations
 import math
 
-from rich.box import SQUARE, HEAVY, Box, HORIZONTALS
+from rich.box import HEAVY, Box, HORIZONTALS
 from rich.columns import Columns
 from rich.panel import Panel
 from rich.text import Text
@@ -130,8 +130,8 @@ class IssueDetail(Widget):
 
     def render(self) -> Panel:
         return Panel(
-            self.issue.body if self.issue.body else "",
-            title=self.issue.title if self.issue.title else "",
+            self.issue.body,
+            title=self.issue.title,
             subtitle=self.issue.labels_str,
             style=self.color,
             border_style=self.border_style,
