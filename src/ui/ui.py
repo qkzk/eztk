@@ -1,7 +1,7 @@
 from __future__ import annotations
 import math
 
-from rich.box import SQUARE, HEAVY, Box
+from rich.box import SQUARE, HEAVY, Box, HORIZONTALS
 from rich.columns import Columns
 from rich.panel import Panel
 from rich.text import Text
@@ -49,7 +49,7 @@ class IssueView(Widget):
     """
 
     is_repo_selected: Reactive[bool] = Reactive(False)
-    text_color: Reactive[str] = Reactive("grey50")
+    # text_color: Reactive[str] = Reactive("grey50")
     selected_issue_color: Reactive[str]
 
     def on_mount(self) -> None:
@@ -76,7 +76,7 @@ class IssueView(Widget):
         Returns an empty string if the Issue isn't set.
         """
         try:
-            return self.issue.title
+            return self.issue.title if self.issue.title else ""
         except AttributeError:
             return ""
 
@@ -88,21 +88,16 @@ class IssueView(Widget):
     def with_selected_color(self, color: str) -> "IssueView":
         """Set the selected color, returns itself."""
         self.selected_issue_color = color
+        self.text_color = color
         return self
 
     def set_selected(self) -> None:
         """Set the color to italic and bright"""
-        self.text_color = self.selected_issue_color + " bold italic"
+        self.text_color = "white bold"
 
     def set_repo_selected(self) -> None:
         """When the repo is selected by the user, use brighter colors."""
-        self.is_repo_selected = True
-        self.text_color = "grey90 bold"
-
-    def set_repo_not_selected(self) -> None:
-        """When the repo isn't selected by the user, use darker colors."""
-        self.is_repo_selected = False
-        self.text_color = "grey50"
+        pass
 
 
 class IssueDetail(Widget):
@@ -131,12 +126,12 @@ class IssueDetail(Widget):
     @property
     def box(self) -> Box:
         """The square box around the issue view. Bold when issue is selected."""
-        return HEAVY if self.is_repo_selected else SQUARE
+        return HEAVY if self.is_repo_selected else HORIZONTALS
 
     def render(self) -> Panel:
         return Panel(
-            self.issue.body,
-            title=self.issue.title,
+            self.issue.body if self.issue.body else "",
+            title=self.issue.title if self.issue.title else "",
             subtitle=self.issue.labels_str,
             style=self.color,
             border_style=self.border_style,
@@ -151,10 +146,6 @@ class IssueDetail(Widget):
     def set_repo_selected(self) -> None:
         """Set itself as selected"""
         self.is_repo_selected = True
-
-    def set_repo_not_selected(self) -> None:
-        """Set itself as not selected."""
-        self.is_repo_selected = False
 
     def set_selected(self):
         pass
@@ -270,7 +261,7 @@ class RepoView(Widget):
     @property
     def box(self) -> Box:
         """The type of border. thin square when not selected, bold when it is."""
-        return HEAVY if self.is_selected else SQUARE
+        return HEAVY if self.is_selected else HORIZONTALS
 
     def render(self) -> Panel:
         """
