@@ -25,7 +25,7 @@ EZTK
 
 Display your github issues in the terminal.
 
-← →: change repo 
+← →: change repo
  ↓ ↑: change issue
 
 h l: change repo
@@ -125,7 +125,9 @@ class IssueDetail(Widget):
 
     @property
     def box(self) -> Box:
-        """The square box around the issue view. Bold when issue is selected."""
+        """
+        The square box around the issue view. Bold when issue is selected.
+        """
         return HEAVY if self.is_repo_selected else HORIZONTALS
 
     def render(self) -> Panel:
@@ -198,8 +200,10 @@ class RepoView(Widget):
     def reload_repo(self) -> None:
         """
         Fetch the repos.
-        Since the `Repo` object inherit from `list`, we can set it to an empty `list`
-        when the request returns `None` (ie. when `requests` encountered a connexion error.)
+        Since the `Repo` object inherit from `list`, we can set it to
+        an empty `list`
+        when the request returns `None` (ie. when `requests` encountered
+        a connexion error.)
         """
         response = fetch_repo(self._name)
         if response is not None:
@@ -215,7 +219,8 @@ class RepoView(Widget):
     def generate_content(self) -> list[IssueView | IssueDetail]:
         """
         Generate the view content.
-        Returns a list of `ViewIssue` and `ViewDetail` if there's opened issues, else `[" "]`.
+        Returns a list of `ViewIssue`
+        and `ViewDetail` if there's opened issues, else `[" "]`.
         Set the selected issue as 'selected'.
         Give them the propor color.
         """
@@ -260,7 +265,9 @@ class RepoView(Widget):
 
     @property
     def box(self) -> Box:
-        """The type of border. thin square when not selected, bold when it is."""
+        """
+        The type of border. thin square when not selected, bold when it is.
+        """
         return HEAVY if self.is_selected else HORIZONTALS
 
     def render(self) -> Panel:
@@ -391,7 +398,9 @@ class EZTKView(App):
     help_displayed: Reactive[bool] = Reactive(False)
 
     async def on_load(self, _: events.Load) -> None:
-        """Bind keys with the app loads (but before entering application mode)"""
+        """
+        Bind keys with the app loads (but before entering application mode)
+        """
         await self.bind("q", "quit", "Quit")
         await self.bind("escape", "quit", "Quit")
 
