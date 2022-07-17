@@ -11,7 +11,7 @@ from textual.app import App
 from textual.reactive import Reactive
 from textual.widget import Widget
 
-from ..api import fetch_repo
+from ..api import fetch_repo, close_issue
 from ..commands import open_in_browser, open_in_ranger, open_in_lvim_octo
 from ..model import Issue
 from ..tokens import REPOS_DICT
@@ -32,10 +32,11 @@ h l: change repo
  j k: change issue
 
 
-  F1: open repo in browser
-   F2: open issue in browser
- F3: open repo in ranger
-F4: open issue in Octo
+    F1: open repo in browser
+     F2: open issue in browser
+   F3: open repo in ranger
+  F4: open issue in Octo
+F5: close the issue
 
 p: toggle Help
 """
@@ -312,6 +313,11 @@ class RepoView(Widget):
         if self.has_issues:
             open_in_lvim_octo(self._address, self.repo[self.selected_index].number)
 
+    def close_selected_issue(self) -> None:
+        """Close the issue"""
+        if self.has_issues:
+            close_issue(self.repo.name, self.repo[self.selected_index])
+
     async def on_click(self, event: events.Click) -> None:
         """
         Callback when a RepoView is clicked
@@ -420,6 +426,7 @@ class EZTKView(App):
         await self.bind("f2", "f2", "Open issue in browser")
         await self.bind("f3", "f3", "Open repo in ranger")
         await self.bind("f4", "f4", "Open issue in lvim octo")
+        await self.bind("f5", "f5", "Close issue")
 
     async def on_key(self, key: events.Key):
         """
@@ -615,8 +622,14 @@ class EZTKView(App):
         self.selected_view.open_repo_in_ranger()
 
     async def action_f4(self, *_) -> None:
-        """Callback when F1 is pressed. Open issue in nvim octo"""
+        """Callback when F4 is pressed. Open issue in nvim octo"""
         self.selected_view.open_selected_issue_in_lvim_octo()
+
+    async def action_f5(self, *_) -> None:
+        """Callback when F5 is pressed. Close issue, reload and refresh repo."""
+        self.selected_view.close_selected_issue()
+        self.selected_view.reload_repo()
+        self.selected_view.refresh()
 
     async def action_help(self, *_) -> None:
         """Callback when E is pressed. Toggle help"""

@@ -79,7 +79,6 @@ class Issue:
         """State ('open', 'close') of the issue."""
         return self._state
 
-    @property
     def close(self) -> None:
         """Set the state to "close"."""
         self._state = "close"
