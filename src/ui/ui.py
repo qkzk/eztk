@@ -221,7 +221,7 @@ class RepoView(Widget):
         """
         Generate the view content.
         Returns a list of `ViewIssue`
-        and `ViewDetail` if there's opened issues, else `[" "]`.
+        and `ViewDetail` if there's opened issues, else `[]`.
         Set the selected issue as 'selected'.
         Give them the propor color.
         """
@@ -233,11 +233,15 @@ class RepoView(Widget):
             IssueView().with_issue(issue).with_selected_color(self.border_style)
             for issue in self.repo
         ]
+        content[self.selected_index].set_selected()
+        self.insert_issue_detail(content)
         if self.is_selected:
             self.select_all_views(content)
-        content[self.selected_index].set_selected()
-        content.append(self.generate_issue_detail())
         return content
+
+    def insert_issue_detail(self, content: list[IssueView | IssueDetail]) -> None:
+        """Insert the selected issue at its position."""
+        content.insert(self.selected_index + 1, self.generate_issue_detail())
 
     @staticmethod
     def select_all_views(content: list[IssueView | IssueDetail]):
