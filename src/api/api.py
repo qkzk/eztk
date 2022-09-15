@@ -64,3 +64,14 @@ def update_issue(repo_name, issue: Issue) -> bool:
     url = f"{GITHUB_BASEURL}/{GITHUB_USERNAME}/{repo_name}/issues/{issue.number}"
     resp = requests.patch(url, headers=GITHUB_HEADER, data=issue.to_json())
     return resp.status_code == 200
+
+
+@catch_connection_errors
+def close_issue(repo_name: str, issue: Issue) -> bool:
+    """
+    Close an issue.
+
+    Returns `True` iff the issue was closed correctly
+    """
+    issue.close()
+    return update_issue(repo_name, issue)
