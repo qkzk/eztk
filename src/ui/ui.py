@@ -234,14 +234,14 @@ class RepoView(Widget):
             for issue in self.repo
         ]
         content[self.selected_index].set_selected()
-        self.insert_issue_detail(content)
+        self.replace_issue_detail(content)
         if self.is_selected:
             self.select_all_views(content)
         return content
 
-    def insert_issue_detail(self, content: list[IssueView | IssueDetail]) -> None:
-        """Insert the selected issue at its position."""
-        content.insert(self.selected_index + 1, self.generate_issue_detail())
+    def replace_issue_detail(self, content: list[IssueView | IssueDetail]) -> None:
+        """Replace the selected issue with its view detail."""
+        content[self.selected_index] = self.generate_issue_detail()
 
     @staticmethod
     def select_all_views(content: list[IssueView | IssueDetail]):
