@@ -26,14 +26,26 @@ source: https://www.heavy.ai/blog/12-color-palettes-for-telling-better-stories-w
 #     "#00bfa0",
 # )
 
+# COLORS = (
+#     "#ea5545",
+#     "#f46a9b",
+#     "#ef9b20",
+#     "#edbf33",
+#     "#ede15b",
+#     "#bdcf32",
+#     "#87bc45",
+#     "#27aeef",
+#     "#b33dc6",
+# )
+
+
 COLORS = (
-    "#ea5545",
-    "#f46a9b",
-    "#ef9b20",
-    "#edbf33",
-    "#ede15b",
-    "#bdcf32",
-    "#87bc45",
-    "#27aeef",
-    "#b33dc6",
+    "#dd2201",
+    "#fb940b",
+    "#dddd01",
+    "#01df00",
+    "#00ffff",
+    "#3355ff",
+    "#dd00dd",
+    "#fe98bf",
 )
