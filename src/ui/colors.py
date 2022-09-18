@@ -3,14 +3,14 @@ source: https://www.heavy.ai/blog/12-color-palettes-for-telling-better-stories-w
 """
 # COLORS = (
 #     "#fd7f6f",
+#     "#ffb55a",
+#     "#ffee65",
+#     "#b2e061",
 #     "#8bd3c7",
 #     "#7eb0d5",
-#     "#fdcce5",
-#     "#b2e061",
-#     "#ffb55a",
-#     "#bd7ebe",
-#     "#ffee65",
 #     "#beb9db",
+#     "#bd7ebe",
+#     "#fdcce5",
 # )
 #
 
@@ -40,12 +40,12 @@ source: https://www.heavy.ai/blog/12-color-palettes-for-telling-better-stories-w
 
 
 COLORS = (
-    "#dd2201",
+    "#fe6448",
     "#fb940b",
     "#dddd01",
     "#01df00",
     "#00ffff",
-    "#3355ff",
-    "#dd00dd",
+    "#707aff",
+    "#ff2eff",
     "#fe98bf",
 )
