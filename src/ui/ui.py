@@ -19,6 +19,8 @@ from .colors import COLORS
 
 LEFT_BUTTON = 1
 RIGHT_BUTTON = 3
+WHEEL_DOWN = 10
+WHEEL_UP = 8
 
 HELP_MESSAGE = """
 EZTK
@@ -345,7 +347,6 @@ class RepoView(Widget):
                 self.open_selected_issue_in_lvim_octo()
             else:
                 self.open_selected_issue_in_lvim_octo()
-        self.refresh()
 
     @property
     def boss_view(self) -> EZTKView:
@@ -634,6 +635,26 @@ class EZTKView(App):
         self.selected_view.close_selected_issue()
         self.selected_view.reload_repo()
         self.selected_view.refresh()
+
+    async def on_mouse_scroll_down(self, _: events.MouseScrollDown):
+        """
+        Callback when mouse wheel up.
+        select previous issue in current selected repo
+        """
+        view = self.selected_view
+        if view.has_issues:
+            view.selected_index = (view.selected_index - 1) % view.nb_issues
+        self.refresh()
+
+    async def on_mouse_scroll_up(self, _: events.MouseScrollUp):
+        """
+        Callback when mouse wheel up.
+        select next issue in current selected repo
+        """
+        view = self.selected_view
+        if view.has_issues:
+            view.selected_index = (view.selected_index + 1) % view.nb_issues
+        self.refresh()
 
     async def action_help(self, *_) -> None:
         """Callback when E is pressed. Toggle help"""
