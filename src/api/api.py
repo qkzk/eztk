@@ -28,7 +28,7 @@ def catch_connection_errors(func):
 
 
 @catch_connection_errors
-def fetch_repo(repo: str) -> Repo:
+def fetch_repo(repo: str) -> Repo | None:
     """
     Fetch a repo by its name.
     Returns a `Repo` instance with issues already provided as `Issue` instance.
@@ -40,7 +40,8 @@ def fetch_repo(repo: str) -> Repo:
     if resp.status_code == 200:
         return Repo.from_json(repo, resp.json())
     else:
-        raise ApiError(f"Github answered with {resp.status_code}, {resp.text}.")
+        return None
+        # raise ApiError(f"Github answered with {resp.status_code}, {resp.text}.")
 
 
 @catch_connection_errors

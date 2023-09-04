@@ -412,34 +412,34 @@ class EZTKView(App):
         """
         Bind keys with the app loads (but before entering application mode)
         """
-        await self.bind("q", "quit", "Quit")
-        await self.bind("escape", "quit", "Quit")
+        self.bind("q", "quit", description="Quit")
+        self.bind("escape", "quit", description="Quit")
 
-        await self.bind("p", "help", "Help toggle")
+        self.bind("p", "help", description="Help toggle")
 
-        await self.bind("left", "left", "Previous Repo")
-        await self.bind("down", "down", "Previous Issue")
-        await self.bind("up", "up", "Next Issue")
-        await self.bind("right", "right", "Next Repo")
+        self.bind("left", "left", description="Previous Repo")
+        self.bind("down", "down", description="Previous Issue")
+        self.bind("up", "up", description="Next Issue")
+        self.bind("right", "right", description="Next Repo")
 
-        await self.bind("h", "left", "Previous Repo")
-        await self.bind("j", "down", "Previous Issue")
-        await self.bind("k", "up", "Next Issue")
-        await self.bind("l", "right", "Next Repo")
+        self.bind("h", "left", description="Previous Repo")
+        self.bind("j", "down", description="Previous Issue")
+        self.bind("k", "up", description="Next Issue")
+        self.bind("l", "right", description="Next Repo")
 
-        await self.bind("f1", "f1", "Open repo in browser")
-        await self.bind("f2", "f2", "Open issue in browser")
-        await self.bind("f3", "f3", "Open repo in ranger")
-        await self.bind("f4", "f4", "Open issue in lvim octo")
-        await self.bind("f5", "f5", "Close issue")
+        self.bind("f1", "f1", description="Open repo in browser")
+        self.bind("f2", "f2", description="Open issue in browser")
+        self.bind("f3", "f3", description="Open repo in ranger")
+        self.bind("f4", "f4", description="Open issue in lvim octo")
+        self.bind("f5", "f5", description="Close issue")
 
     async def on_key(self, key: events.Key):
         """
         default callback when a key is pressed.
         if the keys isn't binded, open the help.
         """
-        if key.key not in self.bindings.keys:
-            self.help_displayed = not self.help_displayed
+        # if key.key not in self.bindings.keys:
+        #     self.help_displayed = not self.help_displayed
 
     async def on_mount(self, _: events.Mount) -> None:
         """
