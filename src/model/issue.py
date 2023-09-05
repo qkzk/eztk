@@ -96,6 +96,10 @@ class Issue:
         return f"https://github.com/{GITHUB_USERNAME}/{self.repo}/issues/{self.number}"
 
     @classmethod
+    def empty(cls) -> Issue:
+        return cls("", "", "", [], 0, "")
+
+    @classmethod
     def from_json(cls, repo: str, json_issue: dict) -> Issue:
         """Returns an instance of `Issue` parsed from a JSON sent by Github."""
         return cls(

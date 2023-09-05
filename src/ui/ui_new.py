@@ -29,15 +29,23 @@ class RepoView(Static):
     DEFAULT_HEIGHT = 5
     """Default height used if children height can't be converted to `cells`."""
 
-    def __init__(self, repo: Repo):
-        super().__init__()
-        self.repo = repo
+    repo = reactive(Repo.empty())
 
     def compose(self) -> ComposeResult:
         """Create child widgets of a RepoView."""
-        yield Label(self.repo.name, id="repo")
-        for issue in self.repo:
-            yield IssueView(issue)
+        yield Label(self.repo.name, id="label")
+        for _ in range(len(self.repo)):
+            yield IssueView()
+
+    def update_content(self, repo: Repo):
+        log("RepoView: update_content", repo)
+        self.repo = repo
+        label = self.query_one(Label)
+        label.update(self.repo.name)
+        label.refresh(layout=True, repaint=True)
+        log("label", label)
+        for issue_view, issue in zip(self.query(IssueView), self.repo):
+            issue_view.issue = issue
 
     def update_height(self) -> None:
         """
@@ -67,9 +75,7 @@ class IssueView(Static):
     is_text_open = reactive(False)
     """True iff the issue view text is displayed"""
 
-    def __init__(self, issue: Issue) -> None:
-        super().__init__()
-        self.issue = issue
+    issue = reactive(Issue.empty())
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Event handler called when a button is pressed."""
@@ -150,7 +156,12 @@ class EZView(App):
     def on_mount(self):
         """Run after compose"""
         log("EZView: on_mount")
-        # self.set_interval(1, self.reload_repos)
+        self.set_interval(1, self.refresh_content)
+
+    def refresh_content(self) -> None:
+        log("EZView: refresh_content")
+        self.reload_repos()
+        self.dispatch_repos()
 
     def reload_repos(self) -> None:
         """
@@ -162,16 +173,22 @@ class EZView(App):
         """
         for name in self.__repos_dict:
             response = fetch_repo(name)
-            log(f"repo {name}")
-            log(response)
+            # log(f"repo {name}")
+            # log(response)
             self.__repos_content.append(response)
+
+    def dispatch_repos(self) -> None:
+        for repo_view, repo in zip(self.query(RepoView), self.__repos_content):
+            repo_view.update_content(repo)
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
         log("EZView: compose")
         yield Header(id="header")
         yield Footer()
-        yield ScrollableContainer(*(RepoView(repo) for repo in self.__repos_content))
+        yield ScrollableContainer(
+            *(RepoView() for _ in range(len(self.__repos_content)))
+        )
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""

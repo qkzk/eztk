@@ -49,6 +49,10 @@ class Repo(list):
         return f"https://github.com/{GITHUB_USERNAME}/{self._name}"
 
     @classmethod
+    def empty(cls):
+        return cls("", [])
+
+    @classmethod
     def from_json(cls, name, json: list) -> Repo:
         """Creates a `Repo` instance from a JSON sent by github."""
         return cls(
