@@ -4,6 +4,9 @@ from textual.containers import Horizontal, ScrollableContainer, Vertical
 from textual.reactive import reactive
 from textual.widgets import Button, Footer, Header, Label, Markdown, Static
 
+from src.model.repo import Repo
+
+from ..api import fetch_repo
 from ..model import Issue
 from ..tokens import REPOS_DICT
 
@@ -26,15 +29,15 @@ class RepoView(Static):
     DEFAULT_HEIGHT = 5
     """Default height used if children height can't be converted to `cells`."""
 
-    def __init__(self, repo_name: str):
+    def __init__(self, repo: Repo):
         super().__init__()
-        self.repo_name = repo_name
+        self.repo = repo
 
     def compose(self) -> ComposeResult:
         """Create child widgets of a RepoView."""
-        yield Label(self.repo_name, id="repo")
-        yield IssueView(0)
-        yield IssueView(1)
+        yield Label(self.repo.name, id="repo")
+        for issue in self.repo:
+            yield IssueView(issue)
 
     def update_height(self) -> None:
         """
@@ -64,9 +67,9 @@ class IssueView(Static):
     is_text_open = reactive(False)
     """True iff the issue view text is displayed"""
 
-    def __init__(self, b: int) -> None:
+    def __init__(self, issue: Issue) -> None:
         super().__init__()
-        self.b = b
+        self.issue = issue
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Event handler called when a button is pressed."""
@@ -94,7 +97,7 @@ class IssueView(Static):
     def __issue_text(self) -> str:
         """Returns the displayed text depending if it's open or not."""
         if self.is_text_open:
-            return DEV_TEXT
+            return self.issue.body
         else:
             return ""
 
@@ -124,7 +127,7 @@ class IssueView(Static):
         """Creates child widget of an IssueView."""
         with Vertical(id="issue_view_vertical"):
             with Horizontal(id="issue_view_top_bar"):
-                yield Button(str(self.b), id="title", variant="success")
+                yield Button(self.issue.title, id="title", variant="success")
                 yield Button("Edit", id="edit", variant="warning")
                 yield Button("Close", id="close", variant="error")
             yield Markdown(self.__issue_text, id="issue_view_text", classes="none")
@@ -136,13 +139,39 @@ class EZView(App):
     TITLE = "EZTK"
     CSS_PATH = "ui.tcss"
     BINDINGS = [("d", "toggle_dark", "Toggle dark mode"), ("q", "quit", "quit")]
-    __repos = REPOS_DICT
+    __repos_dict = REPOS_DICT
+    __repos_content = reactive(list[Repo])
+
+    def on_load(self):
+        """Run on start, before compose"""
+        log("EZView: on_load")
+        self.reload_repos()
+
+    def on_mount(self):
+        """Run after compose"""
+        log("EZView: on_mount")
+        # self.set_interval(1, self.reload_repos)
+
+    def reload_repos(self) -> None:
+        """
+        Fetch the repos.
+        Since the `Repo` object inherit from `list`, we can set it to
+        an empty `list`
+        when the request returns `None` (ie. when `requests` encountered
+        a connexion error.)
+        """
+        for name in self.__repos_dict:
+            response = fetch_repo(name)
+            log(f"repo {name}")
+            log(response)
+            self.__repos_content.append(response)
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
+        log("EZView: compose")
         yield Header(id="header")
         yield Footer()
-        yield ScrollableContainer(*(RepoView(repo) for repo in self.__repos))
+        yield ScrollableContainer(*(RepoView(repo) for repo in self.__repos_content))
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
