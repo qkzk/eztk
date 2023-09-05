@@ -43,8 +43,9 @@ class RepoView(Static):
         - remove old issues
         - mount new issues
         """
-        self.update_label(repo.name)
+        self.update_title(repo.name)
         self.update_issues(repo)
+        self.update_height()
         self.repo = repo
 
     def update_issues(self, repo: Repo):
@@ -64,10 +65,9 @@ class RepoView(Static):
             issue_view.issue = issue
             self.mount(issue_view)
 
-    def update_label(self, content: str):
+    def update_title(self, content: str):
         """Update the repo_title (the repo name)."""
-        repo_title = self.query_one("#repo_title")
-        repo_title.update(content)
+        self.query_one("#repo_title").update(content)
 
     def on_mount(self):
         pass
