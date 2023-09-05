@@ -7,17 +7,20 @@ RepoView {
     padding-left: 5;
     padding-right: 5;
     padding-bottom: 0;
-    height: 10;
+    height: 3;
 }
 
 IssueView {
     height: 5;
 }
 
-Button {
-    width: 16;
+.issue-title {
+  color: cyan;
 }
 
+.repo-title {
+  color: yellow;
+}
 
 .display {
     display: block;

@@ -33,19 +33,40 @@ class RepoView(Static):
 
     def compose(self) -> ComposeResult:
         """Create child widgets of a RepoView."""
-        yield Label(self.repo.name, id="label")
-        for _ in range(len(self.repo)):
-            yield IssueView()
+        yield Label(self.repo.name, id="label", classes="repo-title")
 
     def update_content(self, repo: Repo):
-        log("RepoView: update_content", repo)
+        """
+        Update RepoView content from a new fetched repo.
+        - update the label (repo title)
+        - remove old issues
+        - mount new issues
+        """
+        self.update_label(repo.name)
+        self.update_issues(repo)
         self.repo = repo
-        label = self.query_one(Label)
-        label.update(self.repo.name)
-        label.refresh(layout=True, repaint=True)
-        log("label", label)
-        for issue_view, issue in zip(self.query(IssueView), self.repo):
+
+    def update_issues(self, repo: Repo):
+        """Unmount all issues and mount new ones."""
+        self.unmount_issues()
+        self.mount_issues(repo)
+
+    def unmount_issues(self):
+        """Unmount all issues"""
+        for issue_view in self.query(IssueView):
+            issue_view.remove()
+
+    def mount_issues(self, repo: Repo):
+        """Mount new issues"""
+        for issue in repo:
+            issue_view = IssueView()
             issue_view.issue = issue
+            self.mount(issue_view)
+
+    def update_label(self, content: str):
+        """Update the label (the repo name)."""
+        label = self.children[0]
+        label.update(content)
 
     def update_height(self) -> None:
         """
@@ -77,14 +98,8 @@ class IssueView(Static):
 
     issue = reactive(Issue.empty())
 
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Event handler called when a button is pressed."""
-        if event.button.id == "title":
-            self.__toggle_text_display()
-        elif event.button.id == "edit":
-            self.__edit()
-        elif event.button.id == "close":
-            self.__close()
+    def on_click(self) -> None:
+        self.__toggle_text_display()
 
     def __toggle_text_display(self):
         """
@@ -126,16 +141,10 @@ class IssueView(Static):
     def __close(self):
         pass
 
-    def on_mount(self):
-        pass
-
     def compose(self) -> ComposeResult:
         """Creates child widget of an IssueView."""
         with Vertical(id="issue_view_vertical"):
-            with Horizontal(id="issue_view_top_bar"):
-                yield Button(self.issue.title, id="title", variant="success")
-                yield Button("Edit", id="edit", variant="warning")
-                yield Button("Close", id="close", variant="error")
+            yield Label(self.issue.title, id="title", classes="issue-title")
             yield Markdown(self.__issue_text, id="issue_view_text", classes="none")
 
 
@@ -156,7 +165,8 @@ class EZView(App):
     def on_mount(self):
         """Run after compose"""
         log("EZView: on_mount")
-        self.set_interval(1, self.refresh_content)
+        self.refresh_content()
+        self.set_interval(30, self.refresh_content)
 
     def refresh_content(self) -> None:
         log("EZView: refresh_content")
@@ -171,15 +181,18 @@ class EZView(App):
         when the request returns `None` (ie. when `requests` encountered
         a connexion error.)
         """
+        repos_content = []
         for name in self.__repos_dict:
             response = fetch_repo(name)
-            # log(f"repo {name}")
-            # log(response)
-            self.__repos_content.append(response)
+            repos_content.append(response)
+        self.__repos_content = repos_content
 
     def dispatch_repos(self) -> None:
+        i = 0
         for repo_view, repo in zip(self.query(RepoView), self.__repos_content):
+            i += 1
             repo_view.update_content(repo)
+        log(f"EZView: dispatched {i} repos")
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
