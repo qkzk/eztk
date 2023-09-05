@@ -1,6 +1,6 @@
+from textual import log
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, ScrollableContainer, Vertical
-from textual.geometry import Size
 from textual.reactive import reactive
 from textual.widgets import Button, Footer, Header, Label, Markdown, Static
 
@@ -34,7 +34,9 @@ class RepoView(Static):
 
 
 class IssueView(Static):
-    dev_text = reactive("")
+    BUTTON_HEIGHT = 5
+    PADDING_HEIGHT = 3
+    is_text_open = reactive(False)
 
     def __init__(self, b: int):
         super().__init__()
@@ -50,18 +52,29 @@ class IssueView(Static):
             self.__close()
 
     def __toggle_content(self):
-        # self.toggle_class("empty")
-        # self.toggle_class("full")
+        self.is_text_open = not self.is_text_open
         content = self.query_one(Markdown)
-        self.dev_text = DEV_TEXT
-        content.update(self.dev_text)
+        content.update(self.__issue_text)
         content.toggle_class("display")
         content.toggle_class("none")
-        self.update()
+        self.parent.styles.height = self.__required_height(content)
 
-    def get_content_height(self, container: Size, viewport: Size, a) -> int:
-        """Force content width size."""
-        return 1
+    @property
+    def __issue_text(self) -> str:
+        if self.is_text_open:
+            return DEV_TEXT
+        else:
+            return ""
+
+    def __required_height(self, content: Markdown) -> int:
+        if self.is_text_open:
+            return (
+                content.get_content_height(self.size, self.container_viewport, 50)
+                + self.PADDING_HEIGHT
+                + self.BUTTON_HEIGHT
+            )
+        else:
+            return self.BUTTON_HEIGHT
 
     def __edit(self):
         pass
@@ -70,16 +83,15 @@ class IssueView(Static):
         pass
 
     def on_mount(self):
-        # self.add_class("empty")
         pass
 
     def compose(self) -> ComposeResult:
-        with Vertical():
-            with Horizontal():
+        with Vertical(id="issue_view_vertical"):
+            with Horizontal(id="issue_view_top_bar"):
                 yield Button(str(self.b), id="title", variant="success")
                 yield Button("Edit", id="edit", variant="warning")
                 yield Button("Close", id="close", variant="error")
-            yield Markdown(self.dev_text, classes="none")
+            yield Markdown(self.__issue_text, id="issue_view_text", classes="none")
 
 
 class EZView(App):
@@ -91,7 +103,7 @@ class EZView(App):
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
-        yield Header()
+        yield Header(id="header")
         yield Footer()
         yield ScrollableContainer(*(RepoView(i) for i in range(10)))
 
