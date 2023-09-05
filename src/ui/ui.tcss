@@ -18,10 +18,22 @@ IssueView {
   color: cyan;
 }
 
+.issue-title:hover {
+  color: red;
+}
+
 .repo-title {
   color: yellow;
   align: center middle;
   width: auto;
+}
+
+Markdown:hover {
+    color: pink;
+}
+
+.repo-title:hover {
+  color: red;
 }
 
 .display {

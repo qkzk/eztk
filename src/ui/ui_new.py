@@ -1,7 +1,14 @@
-from textual import log
+from textual import events, log
 from textual.app import App, ComposeResult
-from textual.containers import Center, Horizontal, ScrollableContainer, Vertical
+from textual.containers import (
+    Center,
+    Container,
+    Horizontal,
+    ScrollableContainer,
+    Vertical,
+)
 from textual.reactive import reactive
+from textual.widget import Widget
 from textual.widgets import Button, Footer, Header, Label, Markdown, Static
 
 from src.model.repo import Repo
@@ -10,20 +17,8 @@ from ..api import fetch_repo
 from ..model import Issue
 from ..tokens import REPOS_DICT
 
-DEV_TEXT = """_italic_ **bold**
 
-```python
-print(1)
-```
-- [ ] unckecked
-- [x] checked
-
-1. one
-2. two
-"""
-
-
-class RepoView(Static):
+class RepoView(Container):
     """A repository view widget."""
 
     DEFAULT_HEIGHT = 5
@@ -65,13 +60,9 @@ class RepoView(Static):
             issue_view.issue = issue
             self.mount(issue_view)
 
-    def update_title(self, content: str):
+    def update_title(self, name: str):
         """Update the repo_title (the repo name)."""
-        self.query_one("#repo_title").update(content)
-
-    def on_mount(self):
-        pass
-        # self.update_height()
+        self.query_one("#repo_title").update(name)
 
     def update_height(self) -> None:
         """
@@ -88,7 +79,7 @@ class RepoView(Static):
         )
 
 
-class IssueView(Static):
+class IssueView(Container):
     """An IssueView widget"""
 
     DEFAULT_HEIGHT = 1
@@ -140,16 +131,10 @@ class IssueView(Static):
         else:
             return self.DEFAULT_HEIGHT
 
-    def __edit(self):
-        pass
-
-    def __close(self):
-        pass
-
     def compose(self) -> ComposeResult:
         """Creates child widget of an IssueView."""
         with Vertical(id="issue_view_vertical"):
-            yield Label(self.issue.title, id="title", classes="issue-title")
+            yield Static(self.issue.title, id="title", classes="issue-title")
             yield Markdown(self.__issue_text, id="issue_view_text", classes="none")
 
 
@@ -158,23 +143,24 @@ class EZView(App):
 
     TITLE = "EZTK"
     CSS_PATH = "ui.tcss"
-    BINDINGS = [("d", "toggle_dark", "Toggle dark mode"), ("q", "quit", "quit")]
+    BINDINGS = [
+        ("d", "toggle_dark", "Toggle dark mode"),
+        ("q", "quit", "quit"),
+    ]
     __repos_dict = REPOS_DICT
     __repos_content = reactive(list[Repo])
+    __selected_issue = reactive(IssueView)
 
     def on_load(self):
         """Run on start, before compose"""
-        log("EZView: on_load")
         self.reload_repos()
 
     def on_mount(self):
         """Run after compose"""
-        log("EZView: on_mount")
         self.refresh_content()
         self.set_interval(30, self.refresh_content)
 
     def refresh_content(self) -> None:
-        log("EZView: refresh_content")
         self.reload_repos()
         self.dispatch_repos()
 
@@ -197,11 +183,9 @@ class EZView(App):
         for repo_view, repo in zip(self.query(RepoView), self.__repos_content):
             i += 1
             repo_view.update_content(repo)
-        log(f"EZView: dispatched {i} repos")
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
-        log("EZView: compose")
         yield Header(id="header")
         yield Footer()
         yield ScrollableContainer(
@@ -211,3 +195,17 @@ class EZView(App):
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
         self.dark = not self.dark
+
+    def on_mouse_move(self, event: events.MouseMove) -> None:
+        t = ""
+        titles = self.query(".issue-title")
+        for title in titles:
+            if (
+                title.has_pseudo_class("hover")
+                or title.parent.parent.has_pseudo_class("hover")
+                or title.parent.parent.query_one(Markdown).has_pseudo_class("hover")
+            ):
+                t = title.parent.parent.issue.title
+                self.__selected_issue = title.parent.parent
+
+        log(f"on_mouse_move: {event} title {t}")
