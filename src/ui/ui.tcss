@@ -11,7 +11,7 @@ RepoView {
 }
 
 IssueView {
-    height: 5;
+    height: 1;
 }
 
 .issue-title {
@@ -20,6 +20,8 @@ IssueView {
 
 .repo-title {
   color: yellow;
+  align: center middle;
+  width: auto;
 }
 
 .display {

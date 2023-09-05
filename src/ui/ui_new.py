@@ -1,6 +1,6 @@
 from textual import log
 from textual.app import App, ComposeResult
-from textual.containers import Horizontal, ScrollableContainer, Vertical
+from textual.containers import Center, Horizontal, ScrollableContainer, Vertical
 from textual.reactive import reactive
 from textual.widgets import Button, Footer, Header, Label, Markdown, Static
 
@@ -33,12 +33,13 @@ class RepoView(Static):
 
     def compose(self) -> ComposeResult:
         """Create child widgets of a RepoView."""
-        yield Label(self.repo.name, id="label", classes="repo-title")
+        with Center():
+            yield Static(self.repo.name, id="repo_title", classes="repo-title")
 
     def update_content(self, repo: Repo):
         """
         Update RepoView content from a new fetched repo.
-        - update the label (repo title)
+        - update the repo_title (repo title)
         - remove old issues
         - mount new issues
         """
@@ -64,9 +65,13 @@ class RepoView(Static):
             self.mount(issue_view)
 
     def update_label(self, content: str):
-        """Update the label (the repo name)."""
-        label = self.children[0]
-        label.update(content)
+        """Update the repo_title (the repo name)."""
+        repo_title = self.query_one("#repo_title")
+        repo_title.update(content)
+
+    def on_mount(self):
+        pass
+        # self.update_height()
 
     def update_height(self) -> None:
         """
@@ -86,7 +91,7 @@ class RepoView(Static):
 class IssueView(Static):
     """An IssueView widget"""
 
-    BUTTON_HEIGHT = 5
+    DEFAULT_HEIGHT = 1
     """Height of the button line"""
     PADDING_HEIGHT = 3
     """Padding around issue text"""
@@ -130,10 +135,10 @@ class IssueView(Static):
                     self.size, self.container_viewport, self.DEFAULT_LINE_WIDTH
                 )
                 + self.PADDING_HEIGHT
-                + self.BUTTON_HEIGHT
+                + self.DEFAULT_HEIGHT
             )
         else:
-            return self.BUTTON_HEIGHT
+            return self.DEFAULT_HEIGHT
 
     def __edit(self):
         pass
