@@ -7,10 +7,11 @@ RepoView {
     padding-left: 5;
     padding-right: 5;
     padding-bottom: 0;
-    height: 5;
+    height: 10;
 }
 
 IssueView {
+    height: 5;
 }
 
 Button {
