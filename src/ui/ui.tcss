@@ -22,7 +22,7 @@ IssueView {
   color: red;
 }
 
-.repo-title {
+.repo_title {
   color: yellow;
   align: center middle;
   width: auto;
@@ -42,4 +42,12 @@ Markdown:hover {
 
 .none {
     display: none;
+}
+
+.selected_repo {
+    background: #443333;
+}
+
+.selected_issue {
+  background: #554444;
 }

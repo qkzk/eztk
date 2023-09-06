@@ -1,3 +1,4 @@
+from typing import Optional
 from textual import events, log
 from textual.app import App, ComposeResult
 from textual.containers import (
@@ -10,26 +11,31 @@ from textual.containers import (
 from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Button, Footer, Header, Label, Markdown, Static
+from src.api.api import close_issue
+from src.commands.term import open_in_lvim_octo, open_in_ranger
 
-from src.model.repo import Repo
+from src.commands.web import open_in_browser
+
 
 from ..api import fetch_repo
+from ..model import Repo
 from ..model import Issue
 from ..tokens import REPOS_DICT
 
 
-class RepoView(Container):
+class RepoView(Widget):
     """A repository view widget."""
 
     DEFAULT_HEIGHT = 5
     """Default height used if children height can't be converted to `cells`."""
 
-    repo = reactive(Repo.empty())
+    repo = reactive(Repo.empty(), always_update=True)
+    selected = reactive(0, always_update=True)
 
     def compose(self) -> ComposeResult:
         """Create child widgets of a RepoView."""
         with Center():
-            yield Static(self.repo.name, id="repo_title", classes="repo-title")
+            yield Static(self.repo.name, id="repo_title", classes="repo_title")
 
     def update_content(self, repo: Repo):
         """
@@ -38,10 +44,10 @@ class RepoView(Container):
         - remove old issues
         - mount new issues
         """
+        log("update content", len(self.repo))
         self.update_title(repo.name)
         self.update_issues(repo)
         self.update_height()
-        self.repo = repo
 
     def update_issues(self, repo: Repo):
         """Unmount all issues and mount new ones."""
@@ -78,8 +84,40 @@ class RepoView(Container):
             for issue_view in self.query(IssueView)
         )
 
+    def select_next_issue(self):
+        issues = self.query(IssueView)
+        if issues:
+            issues[self.selected].unselect()
+        self.selected += 1
+        if self.selected >= len(self.repo):
+            self.selected = 0
+        issues[self.selected].select()
 
-class IssueView(Container):
+    def select_prev_issue(self):
+        issues = self.query(IssueView)
+        if issues:
+            issues[self.selected].unselect()
+        self.selected -= 1
+        if self.selected < 0:
+            self.selected = len(self.repo) - 1
+        issues[self.selected].select()
+
+    def select(self):
+        self.add_class("selected_repo")
+        self.selected = 0
+        issues = self.query(IssueView)
+        if issues:
+            issues[0].select()
+
+    def unselect(self):
+        issues = self.query(IssueView)
+        if issues:
+            issues[self.selected].unselect()
+        self.selected = 0
+        self.remove_class("selected_repo")
+
+
+class IssueView(Widget):
     """An IssueView widget"""
 
     DEFAULT_HEIGHT = 1
@@ -94,10 +132,16 @@ class IssueView(Container):
 
     issue = reactive(Issue.empty())
 
-    def on_click(self) -> None:
-        self.__toggle_text_display()
+    def select(self):
+        self.add_class("selected_issue")
 
-    def __toggle_text_display(self):
+    def unselect(self):
+        self.remove_class("selected_issue")
+
+    def on_click(self) -> None:
+        self.toggle_text_display()
+
+    def toggle_text_display(self):
         """
         Toggle between text and no text display.
         Update its size and the size of its container.
@@ -146,10 +190,20 @@ class EZView(App):
     BINDINGS = [
         ("d", "toggle_dark", "Toggle dark mode"),
         ("q", "quit", "quit"),
+        ("up", "prev_issue", "Select previous issue"),
+        ("down", "next_issue", "Select next issue"),
+        ("left", "prev_repo", "Select previous repo"),
+        ("right", "next_repo", "Select previous repo"),
+        ("enter", "toggle_issue", "Toggle issue"),
+        ("g", "github_issue", "Github issue"),
+        ("G", "github_repo", "Github repo"),
+        ("o", "octo", "Octo"),
+        ("r", "ranger", "Ranger"),
+        ("x", "close", "Close"),
     ]
     __repos_dict = REPOS_DICT
-    __repos_content = reactive(list[Repo])
-    __selected_issue = reactive(IssueView)
+    __repos_list = reactive(list[Repo])
+    selected = reactive(0)
 
     def on_load(self):
         """Run on start, before compose"""
@@ -163,6 +217,7 @@ class EZView(App):
     def refresh_content(self) -> None:
         self.reload_repos()
         self.dispatch_repos()
+        self.select_first()
 
     def reload_repos(self) -> None:
         """
@@ -176,36 +231,86 @@ class EZView(App):
         for name in self.__repos_dict:
             response = fetch_repo(name)
             repos_content.append(response)
-        self.__repos_content = repos_content
+        self.__repos_list = repos_content
 
     def dispatch_repos(self) -> None:
-        i = 0
-        for repo_view, repo in zip(self.query(RepoView), self.__repos_content):
-            i += 1
+        for repo_view, repo in zip(self.query(RepoView), self.__repos_list):
+            repo_view.repo = repo
+            log(repo_view.repo.name, repo.name)
             repo_view.update_content(repo)
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
         yield Header(id="header")
         yield Footer()
-        yield ScrollableContainer(
-            *(RepoView() for _ in range(len(self.__repos_content)))
-        )
+        yield ScrollableContainer(*(RepoView() for _ in range(len(self.__repos_list))))
+
+    def select_first(self):
+        repo = self.query("RepoView")[0]
+        repo.select()
+        issue_views = repo.query("IssueView")
+        if issue_views:
+            issue_views[0].select()
+
+    def selected_issue_view(self) -> Optional[IssueView]:
+        repo = self.query("RepoView")[self.selected]
+        issue_views = repo.query(IssueView)
+        if issue_views:
+            return issue_views[repo.selected]
+
+    def selected_repo_view(self) -> RepoView:
+        return self.query("RepoView")[self.selected]
+
+    def selected_address(self) -> str:
+        return self.__repos_dict.get(self.__repos_list[self.selected].name, "")
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
         self.dark = not self.dark
 
-    def on_mouse_move(self, event: events.MouseMove) -> None:
-        t = ""
-        titles = self.query(".issue-title")
-        for title in titles:
-            if (
-                title.has_pseudo_class("hover")
-                or title.parent.parent.has_pseudo_class("hover")
-                or title.parent.parent.query_one(Markdown).has_pseudo_class("hover")
-            ):
-                t = title.parent.parent.issue.title
-                self.__selected_issue = title.parent.parent
+    def action_next_repo(self) -> None:
+        self.selected_repo_view().unselect()
+        self.selected += 1
+        if self.selected >= len(self.__repos_list):
+            self.selected = 0
+        self.selected_repo_view().select()
 
-        log(f"on_mouse_move: {event} title {t}")
+    def action_prev_repo(self) -> None:
+        self.selected_repo_view().unselect()
+        self.selected -= 1
+        if self.selected < 0:
+            self.selected = len(self.__repos_list) - 1
+        self.selected_repo_view().select()
+
+    def action_next_issue(self):
+        self.selected_repo_view().select_next_issue()
+
+    def action_prev_issue(self):
+        self.selected_repo_view().select_prev_issue()
+
+    def action_toggle_issue(self):
+        issue_view = self.selected_issue_view()
+        if issue_view is not None:
+            issue_view.toggle_text_display()
+
+    def action_github_issue(self):
+        issue_view = self.selected_issue_view()
+        if issue_view is not None:
+            open_in_browser(issue_view.issue.url)
+
+    def action_github_repo(self):
+        open_in_browser(self.selected_repo_view().repo.url)
+
+    def action_ranger(self):
+        open_in_ranger(self.selected_address())
+
+    def action_octo(self):
+        issue_view = self.selected_issue_view()
+        if issue_view:
+            open_in_lvim_octo(self.selected_address(), issue_view.issue.number)
+
+    def action_close(self):
+        issue_view = self.selected_issue_view()
+        if issue_view is not None:
+            repo_name = self.selected_repo_view().repo.name
+            close_issue(repo_name, issue_view.issue)
