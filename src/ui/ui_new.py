@@ -1,4 +1,5 @@
 from typing import Optional
+
 from textual import log
 from textual.app import App, ComposeResult
 from textual.containers import (
@@ -8,7 +9,7 @@ from textual.containers import (
 )
 from textual.reactive import reactive
 from textual.widget import Widget
-from textual.widgets import Button, Footer, Header, Label, Markdown, Static
+from textual.widgets import Footer, Header, Markdown, Static
 
 
 from ..api import fetch_repo, close_issue
