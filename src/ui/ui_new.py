@@ -77,7 +77,7 @@ class RepoView(Widget):
 
         For some reason I can't do it otherwise.
         """
-        self.styles.height = sum(
+        self.styles.height = 1 + sum(
             issue_view.styles.height.cells
             if issue_view.styles.height.cells is not None
             else self.DEFAULT_HEIGHT
@@ -94,7 +94,8 @@ class RepoView(Widget):
         self.selected_index += 1
         if self.selected_index >= len(self.repo):
             self.selected_index = 0
-        issues[self.selected_index].select()
+        if issues:
+            issues[self.selected_index].select()
 
     def select_prev_issue(self):
         """
@@ -106,7 +107,8 @@ class RepoView(Widget):
         self.selected_index -= 1
         if self.selected_index < 0:
             self.selected_index = len(self.repo) - 1
-        issues[self.selected_index].select()
+        if issues:
+            issues[self.selected_index].select()
 
     def select(self):
         """
@@ -227,7 +229,7 @@ class EZView(App):
     ]
     __repos_dict = REPOS_DICT
     """A dict of repo name: folder address"""
-    __repos_list = reactive(list[Repo])
+    __repos_list = reactive(list[Repo], always_update=True)
     """A list of associated repo object"""
     selected_index = reactive(0)
     """Index of the selected repo view"""
@@ -283,7 +285,7 @@ class EZView(App):
 
     def select_first(self) -> None:
         """Select the first repos. Doesn't change the selected index."""
-        repo = self.query("RepoView")[0]
+        repo = self.query(RepoView)[0]
         repo.select()
         issue_views = repo.query("IssueView")
         if issue_views:
@@ -301,7 +303,7 @@ class EZView(App):
 
     def selected_repo_view(self) -> RepoView:
         """Returns the selected RepoView"""
-        return self.query("RepoView")[self.selected_index]
+        return self.query(RepoView)[self.selected_index]
 
     def selected_address(self) -> str:
         return self.__repos_dict.get(self.__repos_list[self.selected_index].name, "")
@@ -310,9 +312,9 @@ class EZView(App):
         """Select a repo and an issue from their indeces."""
         self.selected_repo_view().unselect()
         self.selected_index = repo_index
-        repo = self.query("RepoView")[repo_index]
+        repo = self.query(RepoView)[repo_index]
         repo.select()
-        issue_views = repo.query("IssueView")
+        issue_views = repo.query(IssueView)
         if issue_index < len(issue_views):
             issue_views[issue_index].select()
 

@@ -37,7 +37,6 @@ def fetch_repo(repo: str) -> Repo | None:
     """
     url = f"{GITHUB_BASEURL}/{GITHUB_USERNAME}/{repo}/issues"
     resp = requests.get(url, headers=GITHUB_HEADER)
-    print(resp)
     if resp.status_code == 200:
         return Repo.from_json(repo, resp.json())
     else:
