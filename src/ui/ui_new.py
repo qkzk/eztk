@@ -164,8 +164,9 @@ class IssueView(Widget):
     def on_click(self) -> None:
         """Action when an issue is clicked: toggle the display"""
         repo_view = self.parent
-        app = self.parent.parent.parent.parent
-        app.select_issue_by_index(repo_view.index, self.index)
+        # self.app
+        # app = self.parent.parent.parent.parent
+        self.app.select_issue_by_index(repo_view.index, self.index)
         self.toggle_text_display()
 
     def toggle_text_display(self):
@@ -273,7 +274,6 @@ class EZView(App):
         """Associate every fetched and parsed repo to its view."""
         for repo_view, repo in zip(self.query(RepoView), self.__repos_list):
             repo_view.repo = repo
-            log(repo_view.repo.name, repo.name)
             repo_view.update_content(repo)
 
     def compose(self) -> ComposeResult:
@@ -316,7 +316,9 @@ class EZView(App):
         repo = self.query(RepoView)[repo_index]
         repo.select()
         issue_views = repo.query(IssueView)
+        repo.selected_index = issue_index
         if issue_index < len(issue_views):
+            issue_views[0].unselect()
             issue_views[issue_index].select()
 
     def action_toggle_dark(self) -> None:
