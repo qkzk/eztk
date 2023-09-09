@@ -230,9 +230,10 @@ class EZView(App):
         ("enter", "toggle_issue", "Toggle issue"),
         ("g", "github_issue", "Github issue"),
         ("G", "github_repo", "Github repo"),
-        ("o", "octo", "Octo"),
+        ("o,n", "octo", "Octo"),
         ("r", "ranger", "Ranger"),
         ("x", "close", "Close"),
+        ("f5", "refresh", "Refresh"),
     ]
     __repos_dict = REPOS_DICT
     __nb_repos = len(REPOS_DICT)
@@ -258,7 +259,6 @@ class EZView(App):
         Reload the repos, display the repos, select the first.
         """
         self.reload_repos()
-        # self.dispatch_repos()
         self.select_first()
 
     def reload_repos(self) -> None:
@@ -385,3 +385,7 @@ class EZView(App):
             repo = self.selected_repo_view().repo
             if repo is not None:
                 close_issue(repo.name, issue_view.issue)
+
+    def action_refresh(self) -> None:
+        """Refresh the content"""
+        self.refresh_content()
