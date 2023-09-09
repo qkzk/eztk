@@ -26,6 +26,7 @@ IssueView {
   color: $secondary-lighten-3;
   align: center middle;
   width: auto;
+  text-style: bold;
 }
 
 .repo_title:hover {
