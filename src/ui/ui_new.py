@@ -309,23 +309,27 @@ class EZView(App):
     def selected_address(self) -> str:
         return self.__repos_dict.get(self.__repos_list[self.selected_index].name, "")
 
-    def select_issue_by_index(self, repo_index: int, issue_index: int) -> None:
-        """Select a repo and an issue from their indeces."""
+    def unselect_every_issue_and_repo(self) -> None:
         for repo_view in self.query(RepoView):
             repo_view.unselect()
         for issue_view in self.query(IssueView):
             issue_view.unselect()
+
+    def select_issue_by_index(self, repo_index: int, issue_index: int) -> None:
+        """Select a repo and an issue from their indeces."""
+        self.unselect_every_issue_and_repo()
         self.selected_index = repo_index
         repo = self.query(RepoView)[repo_index]
         repo.select()
         issue_views = repo.query(IssueView)
         repo.selected_index = issue_index
         if issue_index < len(issue_views):
+            issue_views[0].unselect()
             issue_views[issue_index].select()
 
     def action_next_repo(self) -> None:
         """An action to select the next repo"""
-        self.selected_repo_view().unselect()
+        self.unselect_every_issue_and_repo()
         self.selected_index += 1
         if self.selected_index >= len(self.__repos_list):
             self.selected_index = 0
@@ -333,7 +337,7 @@ class EZView(App):
 
     def action_prev_repo(self) -> None:
         """An action to select the previous repo"""
-        self.selected_repo_view().unselect()
+        self.unselect_every_issue_and_repo()
         self.selected_index -= 1
         if self.selected_index < 0:
             self.selected_index = len(self.__repos_list) - 1
