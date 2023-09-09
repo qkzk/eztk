@@ -46,9 +46,10 @@ class RepoView(Widget):
         - remove old issues
         - mount new issues
         """
-        self.update_title(repo.name)
-        self.update_issues(repo)
-        self.update_height()
+        if repo is not None:
+            self.update_title(repo.name)
+            self.update_issues(repo)
+            self.update_height()
 
     def update_issues(self, repo: Repo) -> None:
         """Unmount all issues and mount new ones."""
@@ -311,14 +312,16 @@ class EZView(App):
 
     def select_issue_by_index(self, repo_index: int, issue_index: int) -> None:
         """Select a repo and an issue from their indeces."""
-        self.selected_repo_view().unselect()
+        for repo_view in self.query(RepoView):
+            repo_view.unselect()
+        for issue_view in self.query(IssueView):
+            issue_view.unselect()
         self.selected_index = repo_index
         repo = self.query(RepoView)[repo_index]
         repo.select()
         issue_views = repo.query(IssueView)
         repo.selected_index = issue_index
         if issue_index < len(issue_views):
-            issue_views[0].unselect()
             issue_views[issue_index].select()
 
     def action_toggle_dark(self) -> None:
