@@ -1,12 +1,13 @@
 from typing import Optional
 
-from textual import log
 from textual.app import App, ComposeResult
 from textual.containers import (
     Center,
     ScrollableContainer,
     Vertical,
 )
+from textual.css.query import DOMQuery
+from textual.css.scalar import Scalar
 from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Footer, Header, Markdown, Static
@@ -29,27 +30,37 @@ class RepoView(Widget):
     selected_index = reactive(0, always_update=True)
     """Index of the selected issue"""
 
-    def __init__(self, index: int):
+    def __init__(self, index: int, name: str, address: str):
         super().__init__()
         self.index = index
-        """It's own index in repo list"""
+        """Own position on screen"""
+        self.__name = name
+        """Github repository name"""
+        self.__address = address
+        """Its own index in repo list"""
 
     def compose(self) -> ComposeResult:
         """Create child widgets of a RepoView."""
         with Center():
-            yield Static(self.repo.name, id="repo_title", classes="repo_title")
+            yield Static(self.__name, id="repo_title", classes="repo_title")
 
-    def update_content(self, repo: Repo) -> None:
-        """
-        Update RepoView content from a new fetched repo.
-        - update the repo_title (repo title)
-        - remove old issues
-        - mount new issues
-        """
-        if repo is not None:
-            self.update_title(repo.name)
-            self.update_issues(repo)
+    def refresh_content(self):
+        """Refresh itself. Fetch its issues, update the IssueViews."""
+        self.repo = fetch_repo(self.__name)
+        if self.repo is not None:
+            self.update_issues(self.repo)
             self.update_height()
+            self.refresh()
+
+    @property
+    def repo_name(self) -> str:
+        """Name of the repository on github"""
+        return self.__name
+
+    @property
+    def repo_address(self) -> str:
+        """Local address of the git clone"""
+        return self.__address
 
     def update_issues(self, repo: Repo) -> None:
         """Unmount all issues and mount new ones."""
@@ -68,10 +79,6 @@ class RepoView(Widget):
             issue_view.issue = issue
             self.mount(issue_view)
 
-    def update_title(self, name: str) -> None:
-        """Update the repo_title (the repo name)."""
-        self.query_one("#repo_title").update(name)
-
     def update_height(self) -> None:
         """
         Update self height with child heights.
@@ -81,7 +88,7 @@ class RepoView(Widget):
         """
         self.styles.height = 1 + sum(
             issue_view.styles.height.cells
-            if issue_view.styles.height.cells is not None
+            if isinstance(issue_view.styles.height, Scalar)
             else self.DEFAULT_HEIGHT
             for issue_view in self.query(IssueView)
         )
@@ -94,7 +101,7 @@ class RepoView(Widget):
         if issues:
             issues[self.selected_index].unselect()
         self.selected_index += 1
-        if self.selected_index >= len(self.repo):
+        if self.repo is None or self.selected_index >= len(self.repo):
             self.selected_index = 0
         if issues:
             issues[self.selected_index].select()
@@ -107,7 +114,9 @@ class RepoView(Widget):
         if issues:
             issues[self.selected_index].unselect()
         self.selected_index -= 1
-        if self.selected_index < 0:
+        if self.repo is None:
+            self.selected_index = 0
+        elif self.selected_index < 0:
             self.selected_index = len(self.repo) - 1
         if issues:
             issues[self.selected_index].select()
@@ -126,9 +135,8 @@ class RepoView(Widget):
         """
         Set itself as not selected and select its first issue.
         """
-        issues = self.query(IssueView)
-        if issues:
-            issues[self.selected_index].unselect()
+        for issue in self.query(IssueView):
+            issue.unselect()
         self.selected_index = 0
         self.remove_class("selected_repo")
 
@@ -164,10 +172,7 @@ class IssueView(Widget):
 
     def on_click(self) -> None:
         """Action when an issue is clicked: toggle the display"""
-        repo_view = self.parent
-        # self.app
-        # app = self.parent.parent.parent.parent
-        self.app.select_issue_by_index(repo_view.index, self.index)
+        self.app.select_issue_by_index(self.parent.index, self.index)
         self.toggle_text_display()
 
     def toggle_text_display(self):
@@ -230,15 +235,15 @@ class EZView(App):
         ("x", "close", "Close"),
     ]
     __repos_dict = REPOS_DICT
+    __nb_repos = len(REPOS_DICT)
     """A dict of repo name: folder address"""
-    __repos_list = reactive(list[Repo], always_update=True)
-    """A list of associated repo object"""
     selected_index = reactive(0)
     """Index of the selected repo view"""
 
     def on_load(self):
         """Run on start, before compose"""
-        self.reload_repos()
+        pass
+        # self.reload_repos()
 
     def on_mount(self):
         """
@@ -253,7 +258,7 @@ class EZView(App):
         Reload the repos, display the repos, select the first.
         """
         self.reload_repos()
-        self.dispatch_repos()
+        # self.dispatch_repos()
         self.select_first()
 
     def reload_repos(self) -> None:
@@ -264,31 +269,25 @@ class EZView(App):
         when the request returns `None` (ie. when `requests` encountered
         a connexion error.)
         """
-        repos_content = []
-        for name in self.__repos_dict:
-            response = fetch_repo(name)
-            repos_content.append(response)
-        self.__repos_list = repos_content
-
-    def dispatch_repos(self) -> None:
-        """Associate every fetched and parsed repo to its view."""
-        for repo_view, repo in zip(self.query(RepoView), self.__repos_list):
-            repo_view.repo = repo
-            repo_view.update_content(repo)
+        for repo in self.query(RepoView):
+            repo.refresh_content()
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
         yield Header(id="header")
         yield Footer()
         yield ScrollableContainer(
-            *(RepoView(index) for index in range(len(self.__repos_list)))
+            *(
+                RepoView(index, name, address)
+                for index, (name, address) in enumerate(self.__repos_dict.items())
+            )
         )
 
     def select_first(self) -> None:
         """Select the first repos. Doesn't change the selected index."""
         repo = self.query(RepoView)[0]
         repo.select()
-        issue_views = repo.query("IssueView")
+        issue_views: DOMQuery[IssueView] = repo.query(IssueView)
         if issue_views:
             issue_views[0].select()
 
@@ -297,8 +296,8 @@ class EZView(App):
         Return the selected issue view if any. None otherwise.
         It should always be tested against None since repos may have 0 issue.
         """
-        repo = self.query("RepoView")[self.selected_index]
-        issue_views = repo.query(IssueView)
+        repo: RepoView = self.query(RepoView)[self.selected_index]
+        issue_views: DOMQuery[IssueView] = repo.query(IssueView)
         if issue_views:
             return issue_views[repo.selected_index]
 
@@ -307,7 +306,7 @@ class EZView(App):
         return self.query(RepoView)[self.selected_index]
 
     def selected_address(self) -> str:
-        return self.__repos_dict.get(self.__repos_list[self.selected_index].name, "")
+        return self.selected_repo_view().repo_address
 
     def unselect_every_issue_and_repo(self) -> None:
         for repo_view in self.query(RepoView):
@@ -331,7 +330,7 @@ class EZView(App):
         """An action to select the next repo"""
         self.unselect_every_issue_and_repo()
         self.selected_index += 1
-        if self.selected_index >= len(self.__repos_list):
+        if self.selected_index >= self.__nb_repos:
             self.selected_index = 0
         self.selected_repo_view().select()
 
@@ -340,7 +339,7 @@ class EZView(App):
         self.unselect_every_issue_and_repo()
         self.selected_index -= 1
         if self.selected_index < 0:
-            self.selected_index = len(self.__repos_list) - 1
+            self.selected_index = self.__nb_repos - 1
         self.selected_repo_view().select()
 
     def action_next_issue(self) -> None:
@@ -365,7 +364,9 @@ class EZView(App):
 
     def action_github_repo(self) -> None:
         """An action to open the selected repo in github"""
-        open_in_browser(self.selected_repo_view().repo.url)
+        repo_view = self.selected_repo_view()
+        if repo_view.repo is not None:
+            open_in_browser(repo_view.repo.url)
 
     def action_ranger(self) -> None:
         """An action to open the selected issue in github"""
@@ -381,5 +382,6 @@ class EZView(App):
         """An action to close the issue"""
         issue_view = self.selected_issue_view()
         if issue_view is not None:
-            repo_name = self.selected_repo_view().repo.name
-            close_issue(repo_name, issue_view.issue)
+            repo = self.selected_repo_view().repo
+            if repo is not None:
+                close_issue(repo.name, issue_view.issue)
