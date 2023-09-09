@@ -15,25 +15,21 @@ IssueView {
 }
 
 .issue-title {
-  color: cyan;
+  color: $accent-lighten-3;
 }
 
 .issue-title:hover {
-  color: red;
+  color: $secondary-lighten-3;
 }
 
 .repo_title {
-  color: yellow;
+  color: $secondary-lighten-3;
   align: center middle;
   width: auto;
 }
 
-Markdown:hover {
-    color: pink;
-}
-
-.repo-title:hover {
-  color: red;
+.repo_title:hover {
+  color: $accent-lighten-3;
 }
 
 .display {
@@ -50,4 +46,22 @@ Markdown:hover {
 
 .selected_issue {
   background: #554444;
+}
+
+Footer {
+  background: $boost;
+}
+
+Footer > .footer--highlight {
+    background: $accent-darken-1;
+}
+
+Footer > .footer--highlight-key {
+    background: $secondary;
+    text-style: bold;
+}
+
+Footer > .footer--key {
+    text-style: bold;
+    background: #222;
 }

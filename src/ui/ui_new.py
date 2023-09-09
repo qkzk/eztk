@@ -218,7 +218,6 @@ class EZView(App):
     CSS_PATH = "ui.tcss"
     BINDINGS = [
         ("q", "quit", "quit"),
-        ("d", "toggle_dark", "Dark mode"),
         ("up", "prev_issue", "Previous issue"),
         ("down", "next_issue", "Next issue"),
         ("left", "prev_repo", "Previous repo"),
@@ -323,10 +322,6 @@ class EZView(App):
         repo.selected_index = issue_index
         if issue_index < len(issue_views):
             issue_views[issue_index].select()
-
-    def action_toggle_dark(self) -> None:
-        """An action to toggle dark mode."""
-        self.dark = not self.dark
 
     def action_next_repo(self) -> None:
         """An action to select the next repo"""
