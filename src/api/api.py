@@ -40,8 +40,8 @@ def fetch_repo(repo: str) -> Repo | None:
     if resp.status_code == 200:
         return Repo.from_json(repo, resp.json())
     else:
-        # return None
-        raise ApiError(f"Github answered with {resp.status_code}, {resp.text}.")
+        return None
+        # raise ApiError(f"Github answered with {resp.status_code}, {resp.text}.")
 
 
 @catch_connection_errors
