@@ -44,7 +44,7 @@ class RepoView(Widget):
         with Center():
             yield Static(self.__name, id="repo_title", classes="repo_title")
 
-    def refresh_content(self):
+    def refresh_content(self) -> None:
         """Refresh itself. Fetch its issues, update the IssueViews."""
         self.repo = fetch_repo(self.__name)
         if self.repo is not None:
@@ -201,7 +201,7 @@ class IssueView(Widget):
         if self.is_text_open:
             return (
                 content.get_content_height(
-                    self.size, self.container_viewport, self.DEFAULT_LINE_WIDTH
+                    self.size, self.container_viewport.size, self.DEFAULT_LINE_WIDTH
                 )
                 + self.PADDING_HEIGHT
                 + self.DEFAULT_HEIGHT
@@ -217,7 +217,7 @@ class IssueView(Widget):
 
 
 class EZView(App):
-    """A Textual app to manage stopwatches."""
+    """A Textual app to manage github issues."""
 
     TITLE = "EZTK"
     CSS_PATH = "ui.tcss"
@@ -236,17 +236,17 @@ class EZView(App):
         ("f5", "refresh", "Refresh"),
     ]
     __repos_dict = REPOS_DICT
-    __nb_repos = len(REPOS_DICT)
     """A dict of repo name: folder address"""
+    __nb_repos = len(REPOS_DICT)
+    """Number of associated repositories"""
     selected_index = reactive(0)
     """Index of the selected repo view"""
 
     def on_load(self):
         """Run on start, before compose"""
         pass
-        # self.reload_repos()
 
-    def on_mount(self):
+    def on_mount(self) -> None:
         """
         Run after compose.
         Refresh the content and set an interval to call it again every 30s

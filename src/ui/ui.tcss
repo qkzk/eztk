@@ -1,21 +1,22 @@
 RepoView {
-    layout: vertical;
-    background: $boost;
-    margin: 1;
-    min-width: 50;
-    padding-top: 0;
-    padding-left: 5;
-    padding-right: 5;
-    padding-bottom: 0;
-    height: 3;
+  layout: vertical;
+  background: $boost;
+  margin: 1;
+  min-width: 50;
+  padding-top: 0;
+  padding-left: 5;
+  padding-right: 5;
+  padding-bottom: 0;
+  height: 3;
 }
 
 IssueView {
-    height: 1;
+  height: 1;
 }
 
 .issue-title {
   color: $accent-lighten-3;
+  padding-left: 3;
 }
 
 .issue-title:hover {
@@ -34,15 +35,15 @@ IssueView {
 }
 
 .display {
-    display: block;
+  display: block;
 }
 
 .none {
-    display: none;
+  display: none;
 }
 
 .selected_repo {
-    background: #443333;
+  background: #443333;
 }
 
 .selected_issue {
@@ -54,15 +55,15 @@ Footer {
 }
 
 Footer > .footer--highlight {
-    background: $accent-darken-1;
+  background: $accent-darken-1;
 }
 
 Footer > .footer--highlight-key {
-    background: $secondary;
-    text-style: bold;
+  background: $secondary;
+  text-style: bold;
 }
 
 Footer > .footer--key {
-    text-style: bold;
-    background: #222;
+  text-style: bold;
+  background: #222;
 }
