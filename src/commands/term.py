@@ -15,5 +15,5 @@ def open_in_lvim_octo(address: str, number: int) -> None:
     Open the issue in the terminal and the editor (nvim by default) with Octo.
     """
     exec_command_shell(
-        f"""{TERMINAL} -d {address} -e {EDITOR} +'Octo issue edit {number}'""",
+        f"""{TERMINAL} --working-directory {address} -e {EDITOR} +'Octo issue edit {number}'""",
     )
